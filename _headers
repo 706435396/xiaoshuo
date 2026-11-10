@@ -1,0 +1,10 @@
+# Cloudflare Pages _headers
+# 说明：Brotli / Gzip 由 Cloudflare 边缘节点自动压缩（按客户端支持自动协商），
+# 因此无需手动设置 Content-Encoding —— 手动设置会导致浏览器解码失败。
+# 以下仅配置缓存策略（符合需求中的缓存要求）。
+
+/*
+	Cache-Control: public, max-age=86400
+
+/*.json
+	Cache-Control: no-cache

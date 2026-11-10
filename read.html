@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>阅读器</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%234b5563'/%3E%3Crect%20x='9'%20y='8'%20width='3'%20height='16'%20rx='1'%20fill='white'/%3E%3Crect%20x='14'%20y='8'%20width='9'%20height='16'%20rx='1'%20fill='white'%20opacity='.85'/%3E%3C/svg%3E" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <!-- epub.js 官方 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+  <style>
+    #viewer { width: 100%; height: 100%; }
+    .reader-shadow { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+    .spinner { border: 3px solid rgba(120,120,120,.25); border-top-color: #6b7280; border-radius: 50%; width: 28px; height: 28px; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-[#121212] dark:text-gray-200 h-screen flex flex-col">
+  <!-- 顶部控制条 -->
+  <header class="shrink-0 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
+      <button id="homeBtn" class="shrink-0 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] text-sm hover:bg-gray-200 dark:hover:bg-[#333] transition">← 首页</button>
+      <span id="bookTitle" class="font-medium truncate flex-1">阅读器</span>
+      <span id="progressText" class="hidden text-xs text-gray-500 dark:text-gray-400 shrink-0 mr-2"></span>
+      <!-- epub 控制面板 -->
+      <div id="epubControls" class="hidden shrink-0 flex items-center gap-1 text-sm">
+        <button id="prevBtn" title="上一页" class="px-2 py-1 rounded bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333]">‹</button>
+        <button id="fontDec" title="缩小字体" class="px-2 py-1 rounded bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333]">A-</button>
+        <button id="fontInc" title="放大字体" class="px-2 py-1 rounded bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333]">A+</button>
+        <button id="bgToggle" title="切换背景" class="px-2 py-1 rounded bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333]">背景</button>
+        <select id="tocSelect" title="目录" class="px-2 py-1 rounded bg-gray-100 dark:bg-[#2a2a2a] outline-none max-w-[140px]"></select>
+        <button id="nextBtn" title="下一页" class="px-2 py-1 rounded bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333]">›</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 加载提示 -->
+  <div id="loading" class="flex-1 flex flex-col items-center justify-center text-gray-400">
+    <div class="spinner mb-3"></div><span class="text-sm">加载中…</span>
+  </div>
+
+  <!-- 错误提示 -->
+  <div id="errorBox" class="hidden flex-1 flex-col items-center justify-center text-gray-500 dark:text-gray-400 px-6 text-center">
+    <div class="text-5xl mb-4">⚠️</div>
+    <p id="errorMsg" class="text-sm"></p>
+    <a href="index.html" class="mt-4 px-4 py-2 rounded-lg bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 text-sm">返回首页</a>
+  </div>
+
+  <!-- epub 阅读器容器 -->
+  <div id="viewerWrap" class="hidden flex-1 p-2 sm:p-4 overflow-hidden">
+    <div id="viewer" class="mx-auto bg-white rounded-lg reader-shadow h-full" style="max-width:900px;"></div>
+  </div>
+
+  <!-- pdf 预览容器 -->
+  <iframe id="pdfFrame" class="hidden flex-1 w-full border-0 bg-white"></iframe>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  $('homeBtn').onclick = () => { location.href = 'index.html'; };
+
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+
+  function showError(msg) {
+    $('loading').classList.add('hidden');
+    $('viewerWrap').classList.add('hidden');
+    $('pdfFrame').classList.add('hidden');
+    $('errorBox').classList.remove('hidden');
+    $('errorBox').classList.add('flex');
+    $('errorMsg').textContent = msg;
+  }
+
+  if (!id) {
+    showError('缺少书籍 id 参数，请从首页点击书籍进入。');
+    return;
+  }
+
+  fetch('books.json').then(r => r.json()).then(books => {
+    const book = (Array.isArray(books) ? books : []).find(b => String(b.id) === String(id));
+    if (!book) { showError('未找到该书籍（id 不存在或 books.json 未包含）。'); return; }
+
+    $('bookTitle').textContent = book.title || '阅读器';
+    document.title = (book.title || '阅读器') + ' · 阅读器';
+
+    // PDF：使用浏览器内置预览打开链接
+    if (book.type === 'pdf') {
+      $('loading').classList.add('hidden');
+      $('pdfFrame').classList.remove('hidden');
+      $('pdfFrame').src = book.url;
+      return;
+    }
+
+    // 仅支持 epub / pdf
+    if (book.type !== 'epub') { showError('不支持的书籍类型：' + (book.type || '未知')); return; }
+
+    // EPUB 阅读器
+    $('loading').classList.add('hidden');
+    $('viewerWrap').classList.remove('hidden');
+    $('epubControls').classList.remove('hidden');
+
+    let bookObj, rendition;
+    let fontSize = 100;
+    const bgModes = [
+      { bg: '#ffffff', fg: '#222222' },
+      { bg: '#f4ecd8', fg: '#5b4636' },
+      { bg: '#1a1a1a', fg: '#cfcfcf' }
+    ];
+    let bgIndex = 0;
+
+    // 阅读进度：key 按书籍 id 区分，保存 epub 分页位置（CFI）
+    const progressKey = 'ebook_progress_' + id;
+    let savedCfi = null;
+    try { savedCfi = localStorage.getItem(progressKey); } catch (e) {}
+
+    try {
+      bookObj = ePub(book.url);
+    } catch (e) {
+      showError('epub.js 初始化失败：' + e.message);
+      return;
+    }
+
+    rendition = bookObj.renderTo('viewer', { width: '100%', height: '100%', spread: 'auto' });
+
+    // 恢复上次阅读位置（有进度则跳到该 CFI，否则从首页开始）
+    const startDisplay = savedCfi ? rendition.display(savedCfi) : rendition.display();
+    startDisplay.catch(() => {
+      showError('电子书加载失败：链接失效或资源未开启跨域（CORS）访问，请检查 books.json 中的 url 与存储桶 CORS 设置。');
+    });
+
+    // 每次翻页保存位置
+    rendition.on('relocated', (loc) => {
+      try { localStorage.setItem(progressKey, loc.start.cfi); } catch (e) {}
+      updateProgress(loc);
+    });
+
+    // 生成定位点，用于计算阅读百分比
+    bookObj.ready.then(() => bookObj.locations.generate(1000)).catch(() => {});
+
+    function updateProgress(loc) {
+      try {
+        if (bookObj.locations && bookObj.locations.length()) {
+          const pct = bookObj.locations.percentageFromCfi(loc.start.cfi);
+          if (typeof pct === 'number' && !isNaN(pct)) {
+            const el = $('progressText');
+            el.classList.remove('hidden');
+            el.textContent = '已读 ' + Math.round(pct * 100) + '%';
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 目录跳转
+    bookObj.loaded.navigation.then(nav => {
+      const sel = $('tocSelect');
+      sel.innerHTML = '<option value="">目录</option>' + nav.toc.map((item, i) => '<option value="' + i + '">' + item.label + '</option>').join('');
+      sel.onchange = () => { const i = +sel.value; if (nav.toc[i]) rendition.display(nav.toc[i].href); };
+    }).catch(() => {});
+
+    $('prevBtn').onclick = () => rendition.prev();
+    $('nextBtn').onclick = () => rendition.next();
+    $('fontDec').onclick = () => { fontSize = Math.max(80, fontSize - 10); rendition.themes.fontSize(fontSize + '%'); };
+    $('fontInc').onclick = () => { fontSize = Math.min(200, fontSize + 10); rendition.themes.fontSize(fontSize + '%'); };
+    $('bgToggle').onclick = () => {
+      bgIndex = (bgIndex + 1) % bgModes.length;
+      const m = bgModes[bgIndex];
+      rendition.themes.override('background', m.bg);
+      rendition.themes.override('color', m.fg);
+    };
+
+    window.addEventListener('resize', () => rendition.resize());
+  }).catch(err => {
+    showError('books.json 加载失败，请通过本地服务器预览（见 README）。');
+  });
+})();
+</script>
+</body>
+</html>
