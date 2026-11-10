@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://YOUR_DOMAIN/sitemap.xml
+Sitemap: https://xiaoshuo-5hn.pages.dev/sitemap.xml
