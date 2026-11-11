@@ -45,12 +45,22 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6">
-    <!-- 排序栏 -->
+    <!-- 随机推荐区块 -->
+    <section id="randomSection" class="mb-8">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-medium">随机推荐</h2>
+        <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
+      </div>
+      <div id="randomGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    </section>
+
+    <!-- 排序 / 筛选栏 -->
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-base font-medium">全部书籍</h2>
       <div class="flex gap-2 text-sm">
         <button id="sortLatest" class="sort-btn px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900">最新</button>
         <button id="sortHot" class="sort-btn px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white text-gray-600 dark:bg-[#1a1a1a] dark:text-gray-300">热门</button>
+        <button id="sortFav" class="sort-btn px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white text-gray-600 dark:bg-[#1a1a1a] dark:text-gray-300">收藏</button>
       </div>
     </div>
     <!-- 分类标签筛选栏 -->
@@ -87,10 +97,31 @@
   let searchTerm = '';
   let currentPage = 1;
   let sortMode = 'latest';
+  let currentRandom = []; // 当前随机推荐选中的 id 列表
 
   const $ = (id) => document.getElementById(id);
 
-  // 暗黑模式切换
+  // ---------- 收藏 / 评分（localStorage，无后端） ----------
+  function getFavs() {
+    try { return new Set(JSON.parse(localStorage.getItem('ebook_favs') || '[]')); } catch (e) { return new Set(); }
+  }
+  function isFav(id) { return getFavs().has(String(id)); }
+  function toggleFav(id) {
+    const s = getFavs(); const k = String(id);
+    if (s.has(k)) s.delete(k); else s.add(k);
+    try { localStorage.setItem('ebook_favs', JSON.stringify([...s])); } catch (e) {}
+  }
+  function getRating(id) {
+    try { return parseInt(localStorage.getItem('ebook_rating_' + id) || '0', 10) || 0; } catch (e) { return 0; }
+  }
+  function setRating(id, v) {
+    try {
+      if (v <= 0) localStorage.removeItem('ebook_rating_' + id);
+      else localStorage.setItem('ebook_rating_' + id, String(v));
+    } catch (e) {}
+  }
+
+  // ---------- 暗黑模式切换 ----------
   function updateThemeIcon() {
     $('themeIcon').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
   }
@@ -109,7 +140,45 @@
     );
   }
 
-  // 渲染分类标签（含「全部」）
+  // 单张卡片 HTML（含收藏按钮 + 星级评分），首页与随机推荐共用
+  function cardHtml(b) {
+    const fav = isFav(b.id);
+    const rating = getRating(b.id);
+    const resume = localStorage.getItem('ebook_progress_' + b.id);
+    const stars = [1,2,3,4,5].map(v =>
+      '<span class="star cursor-pointer ' + (v <= rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600') + '" data-id="' + b.id + '" data-val="' + v + '">★</span>'
+    ).join('');
+    return '<a href="read.html?id=' + b.id + '" class="card-shadow relative block rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a] hover:-translate-y-0.5 transition">' +
+      (resume ? '<span class="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[11px] bg-emerald-600 text-white">续读</span>' : '') +
+      '<button class="fav-btn absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center text-sm ' + (fav ? 'bg-rose-500 text-white' : 'bg-black/30 text-white') + '" data-id="' + b.id + '" title="收藏">♥</button>' +
+      '<img src="' + (b.cover || '') + '" onerror="coverFallback(this)" alt="' + b.title + '" class="w-full aspect-[3/4] object-cover bg-gray-100 dark:bg-[#222]" loading="lazy" decoding="async" />' +
+      '<div class="p-3">' +
+        '<h3 class="font-medium text-sm line-clamp-1">' + b.title + '</h3>' +
+        '<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">' + (b.author || '未知作者') + '</p>' +
+        '<div class="flex items-center justify-between mt-2">' +
+          '<span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">' + (b.category || '未分类') + '</span>' +
+          '<span class="text-xs text-gray-400 select-none">' + stars + '</span>' +
+        '</div>' +
+        '<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">' + (b.intro || '') + '</p>' +
+      '</div>' +
+    '</a>';
+  }
+
+  // 事件委托：收藏 / 评分（避免逐卡片绑定，且防止触发卡片跳转）
+  document.addEventListener('click', function (e) {
+    const fb = e.target.closest('.fav-btn');
+    if (fb) { e.preventDefault(); e.stopPropagation(); toggleFav(fb.dataset.id); rerender(); return; }
+    const st = e.target.closest('.star');
+    if (st) {
+      e.preventDefault(); e.stopPropagation();
+      const id = st.dataset.id, val = +st.dataset.val;
+      setRating(id, getRating(id) === val ? 0 : val);
+      rerender();
+      return;
+    }
+  });
+
+  // ---------- 分类标签 ----------
   function renderCategories() {
     const cats = ['全部', ...Array.from(new Set(books.map(b => b.category).filter(Boolean)))];
     $('categories').innerHTML = cats.map(c =>
@@ -119,11 +188,11 @@
       '">' + c + '</button>'
     ).join('');
     document.querySelectorAll('.cat-btn').forEach(btn => {
-      btn.addEventListener('click', () => { activeCategory = btn.dataset.cat; currentPage = 1; renderCategories(); applyFilter(); });
+      btn.addEventListener('click', () => { activeCategory = btn.dataset.cat; currentPage = 1; applyFilter(); });
     });
   }
 
-  // 过滤（搜索 + 分类）
+  // ---------- 过滤 + 排序 ----------
   function applyFilter() {
     const term = searchTerm.trim().toLowerCase();
     filtered = books.filter(b => {
@@ -131,7 +200,9 @@
       const matchTerm = !term || [b.title, b.author, b.category].some(v => (v || '').toLowerCase().includes(term));
       return matchCat && matchTerm;
     });
-    // 排序：最新=id 倒序；热门=hot 优先（true 或数值越大越前，false/缺省回退 id 倒序）
+    // 收藏筛选模式：仅保留已收藏
+    if (sortMode === 'fav') filtered = filtered.filter(b => isFav(b.id));
+    // 排序：最新=id 倒序；热门=hot 优先；其余回退 id 倒序
     filtered.sort((a, b) => {
       if (sortMode === 'hot') {
         const hv = (x) => (x.hot === true ? 1 : (typeof x.hot === 'number' ? x.hot : 0));
@@ -142,9 +213,20 @@
     });
     currentPage = 1;
     renderBooks();
+
+    // 随机推荐仅在「无搜索 + 全部分类 + 非收藏」时显示
+    const showRandom = !term && activeCategory === '全部' && sortMode !== 'fav' && books.length > 0;
+    $('randomSection').classList.toggle('hidden', !showRandom);
+    if (showRandom) renderRandom();
   }
 
-  // 渲染书籍卡片 + 分页
+  // 收藏 / 评分变更后只重渲染，不影响分页位置
+  function rerender() {
+    renderBooks();
+    if (!$('randomSection').classList.contains('hidden')) renderRandom();
+  }
+
+  // ---------- 渲染书籍卡片 + 分页 ----------
   function renderBooks() {
     const total = filtered.length;
     const pages = Math.max(1, Math.ceil(total / PER_PAGE));
@@ -166,22 +248,22 @@
     $('empty').classList.remove('flex');
     $('pagination').classList.remove('hidden');
 
-    $('bookGrid').innerHTML = list.map(b => {
-      const resume = localStorage.getItem('ebook_progress_' + b.id);
-      return '<a href="read.html?id=' + b.id + '" class="card-shadow relative block rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a] hover:-translate-y-0.5 transition">' +
-        (resume ? '<span class="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[11px] bg-emerald-600 text-white">续读</span>' : '') +
-        '<img src="' + (b.cover || '') + '" onerror="coverFallback(this)" alt="' + b.title + '" class="w-full aspect-[3/4] object-cover bg-gray-100 dark:bg-[#222]" loading="lazy" decoding="async" />' +
-        '<div class="p-3">' +
-          '<h3 class="font-medium text-sm line-clamp-1">' + b.title + '</h3>' +
-          '<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">' + (b.author || '未知作者') + '</p>' +
-          '<span class="inline-block mt-2 text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">' + (b.category || '未分类') + '</span>' +
-          '<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">' + (b.intro || '') + '</p>' +
-        '</div>' +
-      '</a>';
-    }).join('');
-
+    $('bookGrid').innerHTML = list.map(cardHtml).join('');
     renderPagination(pages);
   }
+
+  // ---------- 随机推荐 ----------
+  function pickRandom() {
+    const ids = books.map(b => b.id);
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    currentRandom = ids.slice(0, Math.min(4, ids.length));
+  }
+  function renderRandom() {
+    if (currentRandom.length === 0) pickRandom();
+    const sel = books.filter(b => currentRandom.includes(b.id));
+    $('randomGrid').innerHTML = sel.map(cardHtml).join('');
+  }
+  $('shuffleBtn').addEventListener('click', () => { pickRandom(); renderRandom(); });
 
   // 分页控件
   function renderPagination(pages) {
@@ -201,16 +283,20 @@
 
   $('search').addEventListener('input', (e) => { searchTerm = e.target.value; applyFilter(); });
 
-  // 排序：最新 / 热门
+  // 排序：最新 / 热门 / 收藏
   function setSort(mode) {
     sortMode = mode;
     const base = 'sort-btn px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 ';
-    $('sortLatest').className = base + (mode === 'latest' ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white text-gray-600 dark:bg-[#1a1a1a] dark:text-gray-300');
-    $('sortHot').className = base + (mode === 'hot' ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white text-gray-600 dark:bg-[#1a1a1a] dark:text-gray-300');
+    const on = 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900';
+    const off = 'bg-white text-gray-600 dark:bg-[#1a1a1a] dark:text-gray-300';
+    $('sortLatest').className = base + (mode === 'latest' ? on : off);
+    $('sortHot').className = base + (mode === 'hot' ? on : off);
+    $('sortFav').className = base + (mode === 'fav' ? on : off);
     applyFilter();
   }
   $('sortLatest').addEventListener('click', () => setSort('latest'));
   $('sortHot').addEventListener('click', () => setSort('hot'));
+  $('sortFav').addEventListener('click', () => setSort('fav'));
 
   // 本机访问统计（纯前端 localStorage，不依赖任何第三方）
   (function () {

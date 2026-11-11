@@ -33,6 +33,12 @@
       <button id="homeBtn" class="shrink-0 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] text-sm hover:bg-gray-200 dark:hover:bg-[#333] transition">← 首页</button>
       <span id="bookTitle" class="font-medium truncate flex-1">阅读器</span>
       <span id="progressText" class="hidden text-xs text-gray-500 dark:text-gray-400 shrink-0 mr-2"></span>
+      <!-- 收藏 / 评分 / 备份（所有类型通用） -->
+      <button id="favBtn" title="收藏" class="shrink-0 w-9 h-9 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] flex items-center justify-center text-lg text-gray-400 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-[#333] transition">♥</button>
+      <span id="rateStars" class="hidden sm:flex shrink-0 items-center gap-0.5 text-lg"></span>
+      <button id="backupBtn" title="导出进度备份" class="shrink-0 px-2 py-1 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333] text-sm transition">⤓</button>
+      <button id="restoreBtn" title="导入进度备份" class="shrink-0 px-2 py-1 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333] text-sm transition">⤒</button>
+      <input id="importFile" type="file" accept="application/json" class="hidden" />
       <!-- epub 控制面板 -->
       <div id="epubControls" class="hidden shrink-0 flex items-center gap-1 text-sm">
         <button id="prevBtn" title="上一页" class="px-2 py-1 rounded bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333]">‹</button>
@@ -68,6 +74,57 @@
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
+
+  // ---------- 收藏 / 评分（localStorage，无后端） ----------
+  function getFavs() {
+    try { return new Set(JSON.parse(localStorage.getItem('ebook_favs') || '[]')); } catch (e) { return new Set(); }
+  }
+  function isFav(id) { return getFavs().has(String(id)); }
+  function toggleFav(id) {
+    const s = getFavs(); const k = String(id);
+    if (s.has(k)) s.delete(k); else s.add(k);
+    try { localStorage.setItem('ebook_favs', JSON.stringify([...s])); } catch (e) {}
+  }
+  function getRating(id) {
+    try { return parseInt(localStorage.getItem('ebook_rating_' + id) || '0', 10) || 0; } catch (e) { return 0; }
+  }
+  function setRating(id, v) {
+    try {
+      if (v <= 0) localStorage.removeItem('ebook_rating_' + id);
+      else localStorage.setItem('ebook_rating_' + id, String(v));
+    } catch (e) {}
+  }
+
+  // ---------- 进度备份导出 / 导入 ----------
+  function exportBackup() {
+    const data = { favs: [...getFavs()], ratings: {}, progress: {} };
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k.startsWith('ebook_progress_')) data.progress[k] = localStorage.getItem(k);
+      if (k.startsWith('ebook_rating_')) data.ratings[k] = localStorage.getItem(k);
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ebook-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+  function importBackup(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const d = JSON.parse(reader.result);
+        if (Array.isArray(d.favs)) localStorage.setItem('ebook_favs', JSON.stringify(d.favs));
+        Object.entries(d.ratings || {}).forEach(([k, v]) => localStorage.setItem(k, v));
+        Object.entries(d.progress || {}).forEach(([k, v]) => localStorage.setItem(k, v));
+        alert('已恢复备份，即将刷新页面生效。');
+        location.reload();
+      } catch (e) { alert('备份文件解析失败，请确认是本站导出的 JSON。'); }
+    };
+    reader.readAsText(file);
+  }
+
   $('homeBtn').onclick = () => { location.href = 'index.html'; };
 
   const params = new URLSearchParams(location.search);
@@ -94,6 +151,28 @@
     $('bookTitle').textContent = book.title || '阅读器';
     document.title = (book.title || '阅读器') + ' · 阅读器';
 
+    // 收藏 / 评分 / 进度备份控件（epub 与 pdf 通用）
+    function refreshFav() {
+      const f = isFav(id);
+      $('favBtn').className = 'shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ' +
+        (f ? 'bg-rose-500 text-white' : 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-400 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-[#333]');
+    }
+    function renderRateStars() {
+      const cur = getRating(id);
+      $('rateStars').innerHTML = [1,2,3,4,5].map(v =>
+        '<span class="rate-star cursor-pointer ' + (v <= cur ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600') + '" data-val="' + v + '">★</span>'
+      ).join('');
+    }
+    $('favBtn').onclick = () => { toggleFav(id); refreshFav(); };
+    $('rateStars').onclick = (e) => {
+      const s = e.target.closest('.rate-star'); if (!s) return;
+      const v = +s.dataset.val; setRating(id, getRating(id) === v ? 0 : v); renderRateStars();
+    };
+    $('backupBtn').onclick = exportBackup;
+    $('restoreBtn').onclick = () => $('importFile').click();
+    $('importFile').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importBackup(f); e.target.value = ''; });
+    refreshFav(); renderRateStars();
+
     // PDF：使用浏览器内置预览打开链接
     if (book.type === 'pdf') {
       $('loading').classList.add('hidden');
@@ -112,10 +191,12 @@
 
     let bookObj, rendition;
     let fontSize = 100;
+    // 阅读器配色：默认 / 羊皮纸 / 护眼绿 / 夜间
     const bgModes = [
-      { bg: '#ffffff', fg: '#222222' },
-      { bg: '#f4ecd8', fg: '#5b4636' },
-      { bg: '#1a1a1a', fg: '#cfcfcf' }
+      { name: '默认', bg: '#ffffff', fg: '#222222' },
+      { name: '羊皮纸', bg: '#f8f1e3', fg: '#5b4a3a' },
+      { name: '护眼绿', bg: '#c7edcc', fg: '#234d2b' },
+      { name: '夜间', bg: '#1a1a1a', fg: '#cfcfcf' }
     ];
     let bgIndex = 0;
 
@@ -172,11 +253,13 @@
     $('nextBtn').onclick = () => rendition.next();
     $('fontDec').onclick = () => { fontSize = Math.max(80, fontSize - 10); rendition.themes.fontSize(fontSize + '%'); };
     $('fontInc').onclick = () => { fontSize = Math.min(200, fontSize + 10); rendition.themes.fontSize(fontSize + '%'); };
+    $('bgToggle').textContent = bgModes[0].name;
     $('bgToggle').onclick = () => {
       bgIndex = (bgIndex + 1) % bgModes.length;
       const m = bgModes[bgIndex];
       rendition.themes.override('background', m.bg);
       rendition.themes.override('color', m.fg);
+      $('bgToggle').textContent = m.name;
     };
 
     window.addEventListener('resize', () => rendition.resize());
