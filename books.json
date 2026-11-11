@@ -4,10 +4,10 @@
     "title": "测试书籍A",
     "author": "作者A",
     "category": "文学",
-    "cover": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/cover/a.jpg",
-    "intro": "一段简短书籍简介",
+    "cover": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/cover/test-a.jpg",
+    "intro": "一段简短书籍简介（占位示例，请替换为真实书籍）",
     "type": "epub",
-    "url": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/book/a.epub",
+    "url": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/book/test-a.epub",
     "hot": true
   },
   {
@@ -15,10 +15,10 @@
     "title": "测试书籍B",
     "author": "作者B",
     "category": "历史",
-    "cover": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/cover/b.jpg",
-    "intro": "一段简短书籍简介",
+    "cover": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/cover/test-b.jpg",
+    "intro": "一段简短书籍简介（占位示例，请替换为真实书籍）",
     "type": "pdf",
-    "url": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/book/b.pdf",
+    "url": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/book/test-b.pdf",
     "hot": false
   }
 ]
