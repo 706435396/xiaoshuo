@@ -37,6 +37,8 @@
         <input id="search" type="search" placeholder="搜索书名 / 作者 / 分类"
           class="w-full px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] border border-transparent focus:border-gray-300 dark:focus:border-gray-600 outline-none text-sm" />
       </div>
+      <button id="authBtn" title="登录 / 注册"
+        class="shrink-0 px-3 h-9 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] flex items-center justify-center text-sm hover:bg-gray-200 dark:hover:bg-[#333] transition">登录</button>
       <button id="themeToggle" title="切换主题"
         class="shrink-0 w-9 h-9 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#333] transition">
         <span id="themeIcon">🌙</span>
@@ -110,6 +112,27 @@
     <div id="deskShelfBody" class="space-y-4 text-sm"></div>
   </aside>
 
+  <!-- 登录 / 注册 模态框 -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+    <div class="w-full max-w-sm card-shadow rounded-xl bg-white dark:bg-[#1a1a1a] p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="authTitle" class="text-base font-medium">登录</h3>
+        <button id="authClose" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg leading-none">✕</button>
+      </div>
+      <div class="flex gap-2 mb-4 text-sm">
+        <button id="tabLogin" class="auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900">登录</button>
+        <button id="tabReg" class="auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300">注册</button>
+      </div>
+      <input id="authUser" type="text" placeholder="用户名（中英文/数字，1-32）" autocomplete="username"
+        class="w-full px-3 py-2 mb-3 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] border border-transparent focus:border-gray-300 dark:focus:border-gray-600 outline-none text-sm" />
+      <input id="authPwd" type="password" placeholder="密码（至少6位）" autocomplete="current-password"
+        class="w-full px-3 py-2 mb-3 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] border border-transparent focus:border-gray-300 dark:focus:border-gray-600 outline-none text-sm" />
+      <p id="authMsg" class="text-xs text-red-500 min-h-[1rem] mb-2"></p>
+      <button id="authSubmit" class="w-full py-2 rounded-lg bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 text-sm hover:opacity-90 transition">登录</button>
+      <p class="text-xs text-gray-400 mt-3 text-center">登录后收藏 / 评分 / 阅读进度将云端同步，可跨设备。</p>
+    </div>
+  </div>
+
 <script>
 (function () {
   const PER_PAGE = 12;
@@ -128,6 +151,100 @@
   let allCategories = [];   // 全部分类列表
 
   const $ = (id) => document.getElementById(id);
+
+  // ---------- 账号登录 + 进度云同步（Pages Functions + KV，无独立后端） ----------
+  const AUTH_KEY = 'ebook_token', USER_KEY = 'ebook_user';
+  function getToken() { try { return localStorage.getItem(AUTH_KEY); } catch (e) { return null; } }
+  function getCurUser() { try { return localStorage.getItem(USER_KEY); } catch (e) { return null; } }
+  async function apiCall(path, opts = {}) {
+    const token = getToken();
+    const headers = Object.assign({ 'content-type': 'application/json' }, opts.headers || {});
+    if (token) headers['authorization'] = 'Bearer ' + token;
+    try {
+      const res = await fetch('/api' + path, Object.assign({ method: opts.method || 'GET', headers }, opts.body ? { body: opts.body } : {}));
+      let data = {}; try { data = await res.json(); } catch (e) {}
+      return { ok: res.ok, status: res.status, data };
+    } catch (e) { return { ok: false, status: 0, data: { error: '网络错误' } }; }
+  }
+  // 收集本地收藏/评分/进度，打包上传
+  function collectLocal() {
+    const favs = [...getFavs()];
+    const ratings = {}, progress = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i); if (!k) continue;
+      if (k.indexOf('ebook_rating_') === 0) ratings[k.slice(13)] = parseInt(localStorage.getItem(k), 10) || 0;
+      else if (k.indexOf('ebook_progress_') === 0) progress[k.slice(15)] = localStorage.getItem(k);
+    }
+    return { favs, ratings, progress };
+  }
+  // 登录后拉取云端并合并（云端优先于本地冲突项）
+  async function syncPull() {
+    const r = await apiCall('/progress');
+    if (r.status === 401) { logout(); return; }
+    if (!r.ok) return;
+    const d = r.data || {};
+    const cur = getFavs();
+    (d.favs || []).forEach(id => cur.add(String(id)));
+    try { localStorage.setItem('ebook_favs', JSON.stringify([...cur])); } catch (e) {}
+    const ratings = d.ratings || {};
+    for (const id in ratings) if (ratings[id]) localStorage.setItem('ebook_rating_' + id, String(ratings[id]));
+    const progress = d.progress || {};
+    for (const id in progress) if (progress[id]) localStorage.setItem('ebook_progress_' + id, progress[id]);
+    if (books.length) { rerender(); renderShelf(); }
+  }
+  let pushTimer = null;
+  function syncPush() {
+    if (!getToken()) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(async () => {
+      const r = await apiCall('/progress', { method: 'PUT', body: JSON.stringify(collectLocal()) });
+      if (r.status === 401) logout();
+    }, 800);
+  }
+  function onAuthed(token, user) {
+    localStorage.setItem(AUTH_KEY, token);
+    localStorage.setItem(USER_KEY, user);
+    updateAuthUI();
+    syncPull().then(syncPush);
+  }
+  function logout() {
+    localStorage.removeItem(AUTH_KEY); localStorage.removeItem(USER_KEY);
+    updateAuthUI();
+  }
+  function updateAuthUI() {
+    const b = $('authBtn'); if (!b) return;
+    const u = getCurUser();
+    b.textContent = u ? (u + ' · 退出') : '登录';
+  }
+  let authMode = 'login';
+  function switchAuthTab(mode) {
+    authMode = mode;
+    $('authTitle').textContent = mode === 'login' ? '登录' : '注册';
+    $('authSubmit').textContent = mode === 'login' ? '登录' : '注册';
+    const on = 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900';
+    const off = 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300';
+    $('tabLogin').className = 'auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 ' + (mode === 'login' ? on : off);
+    $('tabReg').className = 'auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 ' + (mode === 'reg' ? on : off);
+  }
+  function openAuth(mode) { switchAuthTab(mode); $('authMsg').textContent = ''; $('authUser').value = ''; $('authPwd').value = ''; $('authModal').classList.remove('hidden'); setTimeout(() => $('authUser').focus(), 50); }
+  function closeAuth() { $('authModal').classList.add('hidden'); }
+  async function submitAuth() {
+    const name = $('authUser').value.trim(), pwd = $('authPwd').value;
+    if (!name || !pwd) { $('authMsg').textContent = '请输入用户名和密码'; return; }
+    $('authSubmit').disabled = true;
+    const r = await apiCall('/' + authMode, { method: 'POST', body: JSON.stringify({ username: name, password: pwd }) });
+    $('authSubmit').disabled = false;
+    if (r.ok) { closeAuth(); onAuthed(r.data.token, r.data.username); }
+    else $('authMsg').textContent = r.data.error || '操作失败';
+  }
+  $('authBtn').addEventListener('click', () => { if (getCurUser()) logout(); else openAuth('login'); });
+  $('authClose').addEventListener('click', closeAuth);
+  $('authModal').addEventListener('click', (e) => { if (e.target === $('authModal')) closeAuth(); });
+  $('tabLogin').addEventListener('click', () => switchAuthTab('login'));
+  $('tabReg').addEventListener('click', () => switchAuthTab('reg'));
+  $('authSubmit').addEventListener('click', submitAuth);
+  $('authPwd').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAuth(); });
+  $('authUser').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('authPwd').focus(); });
 
   // ---------- 收藏 / 评分（localStorage，无后端） ----------
   function getFavs() {
@@ -253,6 +370,7 @@
     renderBooks();
     if (!$('randomSection').classList.contains('hidden')) renderRandom();
     renderShelf();
+    syncPush(); // 已登录则防抖上传到云端
   }
 
   // ---------- 我的书架（收藏 + 评分独立面板，桌面侧栏 / 移动端折叠区块共用） ----------
@@ -434,6 +552,10 @@
     $('empty').classList.add('flex');
     $('empty').innerHTML = '<div class="text-4xl mb-3">⚠️</div><p class="text-sm">books.json 加载失败，请通过本地服务器预览（见 README）。</p>';
   });
+
+  // 启动：刷新登录态；已登录则拉取云端进度合并（本地数据随后在渲染中体现）
+  updateAuthUI();
+  if (getToken()) syncPull();
 })();
 </script>
 </body>

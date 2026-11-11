@@ -137,11 +137,37 @@ npx serve .
 手动 commit 上线前，逐项核对：
 
 - [ ] `books.json` 里所有 `url` / `cover` 均为 **https** 直链，且不是网盘跳转页 / 中转页（应是文件本体可直接访问或下载）。
-- [ ] 仓库内**文件名无中文、无空格**（当前 10 个文件均为 ASCII，已合规）。
+- [ ] 仓库内**文件名无中文、无空格**（源码文件均为 ASCII，含 `functions/api/` 下的 Functions 文件，已合规）。
 - [ ] 每条 `type` 与文件后缀一致：`epub` 对应 `.epub`，`pdf` 对应 `.pdf`。
 - [ ] `sitemap.xml` 里的 `https://your-domain.pages.dev` 已替换成你自己的真实域名。
 - [ ] 本地先用 `python -m http.server 8080` 跑一遍，确认首页列表、搜索、分类、排序正常，且阅读器能加载 epub / 预览 pdf。
 - [ ] （epub）R2 直链已开启 CORS（`Access-Control-Allow-Origin` 包含你的域名）。
+
+## 用户登录与进度云同步（v3 进阶 · 需 Cloudflare KV）
+
+本站核心仍是纯静态零后端，所有数据存浏览器 localStorage。若需要**跨设备同步**收藏 / 评分 / 阅读进度，可启用内置的轻量登录（基于 Cloudflare Pages Functions + KV，仍无传统后端、零构建）。
+
+### 原理
+- 登录接口：`/api/register`、`/api/login`、`/api/progress`（GET 拉取 / PUT 上传），由仓库 `functions/api/` 下的 Pages Functions 提供，自动随 Pages 部署生效。
+- 存储：Cloudflare KV 命名空间 `USER_DATA`，保存用户（密码加盐 SHA-256）、会话 token（30 天）、以及每用户的进度 JSON。
+- 前端：登录后收藏 / 评分 / 翻页会自动防抖上传；登录时拉取云端进度合并（云端优先）。token 存 localStorage，无需后端会话。
+
+### Cloudflare 控制台配置（一次性）
+1. **创建 KV 命名空间**：Cloudflare 控制台 → Workers & Pages → KV → 新建，命名为 `USER_DATA`，复制其命名空间 ID。
+2. **绑定到 Pages 项目**：你的 Pages 项目 → Settings → Functions → KV 变量绑定 → 添加；变量名填 `USER_DATA`，选择刚建的命名空间。
+3. 重新部署一次 Pages（绑定生效后 Functions 才能读写 KV）。
+
+### 验证
+- 首页右上角「登录」→ 注册一个用户名 + 密码（6 位以上）→ 收藏 / 评分几本书。
+- 换浏览器或清缓存后，用同一账号登录 → 收藏 / 评分 / 阅读进度自动恢复。
+- 未启用 KV 绑定时，登录接口会报错，前端自动降级为仅本地存储（不影响浏览）。
+
+### 本地预览限制
+Pages Functions 只能在 Cloudflare 边缘运行，**`python -m http.server` 不会执行它们**。本地调试登录功能请用：`npx wrangler pages dev --kv USER_DATA=<命名空间ID> .`（需本地安装 wrangler 并登录）。
+
+### 安全说明
+- 密码以「随机 salt + SHA-256」存储，不存明文；token 随机且 30 天过期。
+- 登录是轻量自建，适合个人 / 小众站点；如需更严格账号体系（找回密码、邮箱验证、限流），建议接入专业认证服务。
 
 ## 开源协议
 
