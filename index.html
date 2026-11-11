@@ -49,7 +49,11 @@
     <section id="randomSection" class="mb-8">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-base font-medium">随机推荐</h2>
-        <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
+        <div class="flex items-center gap-2">
+          <select id="randomCat" class="hidden text-sm px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 outline-none max-w-[120px]"></select>
+          <button id="catToggleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">按分类</button>
+          <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
+        </div>
       </div>
       <div id="randomGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
     </section>
@@ -98,6 +102,9 @@
   let currentPage = 1;
   let sortMode = 'latest';
   let currentRandom = []; // 当前随机推荐选中的 id 列表
+  let randomByCat = false; // 随机推荐是否按分类
+  let randomCat = '全部';   // 随机推荐所选分类
+  let allCategories = [];   // 全部分类列表
 
   const $ = (id) => document.getElementById(id);
 
@@ -254,9 +261,22 @@
 
   // ---------- 随机推荐 ----------
   function pickRandom() {
-    const ids = books.map(b => b.id);
+    let pool = books;
+    if (randomByCat && randomCat !== '全部') pool = books.filter(b => b.category === randomCat);
+    const ids = pool.map(b => b.id);
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
     currentRandom = ids.slice(0, Math.min(4, ids.length));
+  }
+  function populateRandomCat() {
+    $('randomCat').innerHTML = ['全部', ...allCategories].map(c => '<option value="' + c + '">' + c + '</option>').join('');
+  }
+  function setCatToggle(on) {
+    randomByCat = on;
+    $('catToggleBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 transition ' +
+      (on ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+    $('randomCat').classList.toggle('hidden', !on);
+    if (on && !$('randomCat').options.length) populateRandomCat();
+    pickRandom(); renderRandom();
   }
   function renderRandom() {
     if (currentRandom.length === 0) pickRandom();
@@ -264,6 +284,8 @@
     $('randomGrid').innerHTML = sel.map(cardHtml).join('');
   }
   $('shuffleBtn').addEventListener('click', () => { pickRandom(); renderRandom(); });
+  $('catToggleBtn').addEventListener('click', () => setCatToggle(!randomByCat));
+  $('randomCat').addEventListener('change', (e) => { randomCat = e.target.value; pickRandom(); renderRandom(); });
 
   // 分页控件
   function renderPagination(pages) {
@@ -311,6 +333,7 @@
   // 加载书库数据
   fetch('books.json').then(r => r.json()).then(data => {
     books = Array.isArray(data) ? data : [];
+    allCategories = Array.from(new Set(books.map(b => b.category).filter(Boolean)));
     renderCategories();
     applyFilter();
   }).catch(err => {
