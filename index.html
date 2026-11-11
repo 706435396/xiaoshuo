@@ -52,6 +52,7 @@
         <div class="flex items-center gap-2 flex-wrap">
           <select id="randomCat" class="text-sm px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 outline-none max-w-[120px]"></select>
           <button id="excludeReadBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">排除已读</button>
+          <button id="ratingFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">评分优先</button>
           <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
         </div>
       </div>
@@ -104,6 +105,7 @@
   let currentRandom = []; // 当前随机推荐选中的 id 列表
   let randomCat = '全部';   // 随机推荐所选分类（全部=全局随机）
   let excludeRead = false;  // 随机推荐是否排除已读
+  let ratingFirst = false; // 随机推荐是否评分优先
   let allCategories = [];   // 全部分类列表
 
   const $ = (id) => document.getElementById(id);
@@ -264,6 +266,12 @@
     let pool = books;
     if (randomCat !== '全部') pool = pool.filter(b => b.category === randomCat);
     if (excludeRead) pool = pool.filter(b => !localStorage.getItem('ebook_progress_' + b.id));
+    if (ratingFirst && pool.length > 4) {
+      // 评分优先：按评分降序取前一半作为候选，高评分更易出现；评分全 0 时退化为普通随机
+      const sorted = pool.slice().sort((a, b) => getRating(b.id) - getRating(a.id));
+      const topN = Math.max(4, Math.ceil(sorted.length / 2));
+      pool = sorted.slice(0, topN);
+    }
     const ids = pool.map(b => b.id);
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
     currentRandom = ids.slice(0, Math.min(4, ids.length));
@@ -285,6 +293,13 @@
   $('shuffleBtn').addEventListener('click', () => { pickRandom(); renderRandom(); });
   $('randomCat').addEventListener('change', (e) => { randomCat = e.target.value; pickRandom(); renderRandom(); });
   $('excludeReadBtn').addEventListener('click', () => setExcludeRead(!excludeRead));
+  function setRatingFirst(on) {
+    ratingFirst = on;
+    $('ratingFirstBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 transition ' +
+      (on ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+    pickRandom(); renderRandom();
+  }
+  $('ratingFirstBtn').addEventListener('click', () => setRatingFirst(!ratingFirst));
 
   // 分页控件
   function renderPagination(pages) {
