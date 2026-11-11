@@ -44,7 +44,16 @@
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-6">
+  <main class="max-w-6xl mx-auto px-4 py-6 lg:pr-[15rem]">
+    <!-- 移动端：我的书架（可折叠，lg 以上隐藏，桌面改用右侧侧栏） -->
+    <section id="mobileShelf" class="lg:hidden mb-6 card-shadow rounded-xl bg-white dark:bg-[#1a1a1a] p-4">
+      <button id="shelfToggle" class="flex items-center justify-between w-full text-left">
+        <span class="text-base font-medium">我的书架</span>
+        <span id="shelfArrow" class="text-gray-400 transition-transform">▸</span>
+      </button>
+      <div id="shelfBody" class="hidden mt-3 space-y-3"></div>
+    </section>
+
     <!-- 随机推荐区块 -->
     <section id="randomSection" class="mb-8">
       <div class="flex items-center justify-between mb-3">
@@ -53,6 +62,8 @@
           <select id="randomCat" class="text-sm px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 outline-none max-w-[120px]"></select>
           <button id="excludeReadBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">排除已读</button>
           <button id="ratingFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">评分优先</button>
+          <button id="favFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">收藏优先</button>
+          <button id="unratedBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">只看未评分</button>
           <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
         </div>
       </div>
@@ -88,10 +99,16 @@
     <div id="pagination" class="hidden flex flex-wrap justify-center items-center gap-2 mt-8"></div>
   </main>
 
-  <footer class="max-w-6xl mx-auto px-4 py-8 text-center text-xs text-gray-400">
+  <footer class="max-w-6xl mx-auto px-4 py-8 text-center text-xs text-gray-400 lg:pr-[15rem]">
     <p>本站仅作书籍索引，电子书文件存储于外部链接。请仅上传拥有版权的作品。</p>
     <p class="mt-2">本机访问 <span id="visitCount">0</span> 次</p>
   </footer>
+
+  <!-- 桌面：我的书架侧栏（固定右侧，lg 以上显示；移动端改用顶部折叠区块） -->
+  <aside id="deskShelf" class="hidden lg:block fixed top-20 right-3 w-56 max-h-[calc(100vh-6rem)] overflow-y-auto card-shadow rounded-xl bg-white dark:bg-[#1a1a1a] p-4 z-10">
+    <h3 class="text-sm font-medium mb-3">我的书架</h3>
+    <div id="deskShelfBody" class="space-y-4 text-sm"></div>
+  </aside>
 
 <script>
 (function () {
@@ -106,6 +123,8 @@
   let randomCat = '全部';   // 随机推荐所选分类（全部=全局随机）
   let excludeRead = false;  // 随机推荐是否排除已读
   let ratingFirst = false; // 随机推荐是否评分优先
+  let favFirst = false;    // 随机推荐是否收藏优先
+  let unratedOnly = false; // 随机推荐是否只看未评分
   let allCategories = [];   // 全部分类列表
 
   const $ = (id) => document.getElementById(id);
@@ -233,7 +252,38 @@
   function rerender() {
     renderBooks();
     if (!$('randomSection').classList.contains('hidden')) renderRandom();
+    renderShelf();
   }
+
+  // ---------- 我的书架（收藏 + 评分独立面板，桌面侧栏 / 移动端折叠区块共用） ----------
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function shelfItemHtml(b) {
+    const r = getRating(b.id);
+    const stars = [1, 2, 3, 4, 5].map(v => '<span class="' + (v <= r ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600') + '">★</span>').join('');
+    return '<a href="read.html?id=' + b.id + '" class="block py-1">' +
+      '<div class="font-medium truncate">' + escapeHtml(b.title) + '</div>' +
+      '<div class="text-xs mt-0.5">' + stars + '</div>' +
+    '</a>';
+  }
+  function renderShelf() {
+    const favs = books.filter(b => isFav(b.id));
+    const rated = books.filter(b => getRating(b.id) > 0);
+    const sec = (title, list) => list.length === 0
+      ? '<div class="text-gray-400"><span class="font-medium text-gray-600 dark:text-gray-300">' + title + '</span><div class="text-xs mt-1">暂无</div></div>'
+      : '<div><div class="font-medium text-gray-600 dark:text-gray-300 mb-1">' + title + ' (' + list.length + ')</div>' + list.map(shelfItemHtml).join('') + '</div>';
+    const html = sec('⭐ 我的收藏', favs) + sec('✍️ 我的评分', rated);
+    const m = $('shelfBody'); if (m) m.innerHTML = html;
+    const d = $('deskShelfBody'); if (d) d.innerHTML = html;
+  }
+  // 移动端书架折叠
+  const shelfToggle = $('shelfToggle');
+  if (shelfToggle) shelfToggle.addEventListener('click', () => {
+    const body = $('shelfBody');
+    const closed = body.classList.toggle('hidden');
+    $('shelfArrow').style.transform = closed ? 'rotate(0deg)' : 'rotate(90deg)';
+  });
 
   // ---------- 渲染书籍卡片 + 分页 ----------
   function renderBooks() {
@@ -272,6 +322,18 @@
       const topN = Math.max(4, Math.ceil(sorted.length / 2));
       pool = sorted.slice(0, topN);
     }
+    if (favFirst) {
+      // 收藏优先：已收藏的书优先入选；不足 4 本时用未收藏补足；无收藏则退化为普通随机
+      const favs = pool.filter(b => isFav(b.id));
+      if (favs.length > 0) {
+        pool = favs.length >= 4 ? favs : favs.concat(pool.filter(b => !isFav(b.id)).slice(0, 4 - favs.length));
+      }
+    }
+    if (unratedOnly) {
+      // 只看未评分：仅保留评分=0 的书；若无未评分则退化为普通随机（保持原 pool）
+      const unrated = pool.filter(b => getRating(b.id) === 0);
+      if (unrated.length > 0) pool = unrated;
+    }
     const ids = pool.map(b => b.id);
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
     currentRandom = ids.slice(0, Math.min(4, ids.length));
@@ -300,6 +362,20 @@
     pickRandom(); renderRandom();
   }
   $('ratingFirstBtn').addEventListener('click', () => setRatingFirst(!ratingFirst));
+  function setFavFirst(on) {
+    favFirst = on;
+    $('favFirstBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 transition ' +
+      (on ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+    pickRandom(); renderRandom();
+  }
+  function setUnrated(on) {
+    unratedOnly = on;
+    $('unratedBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 transition ' +
+      (on ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+    pickRandom(); renderRandom();
+  }
+  $('favFirstBtn').addEventListener('click', () => setFavFirst(!favFirst));
+  $('unratedBtn').addEventListener('click', () => setUnrated(!unratedOnly));
 
   // 分页控件
   function renderPagination(pages) {
@@ -350,6 +426,7 @@
     allCategories = Array.from(new Set(books.map(b => b.category).filter(Boolean)));
     populateRandomCat();
     renderCategories();
+    renderShelf();
     applyFilter();
   }).catch(err => {
     $('loading').classList.add('hidden');
