@@ -98,10 +98,10 @@ npx serve .
   "title": "书名",
   "author": "作者",
   "category": "文学",
-  "cover": "封面图片直链",
+  "cover": "cover/xxx.jpg",
   "intro": "简短简介",
   "type": "epub",
-  "url": "epub 文件直链（R2 直链优先）"
+  "url": "book/xxx.epub"
 }
 ```
 
@@ -109,9 +109,11 @@ npx serve .
 
 - `id`：唯一数字，首页跳转与阅读页读取都依赖它，**不要重复**
 - `title` / `author` / `category` / `intro`：展示用文本
-- `cover`：封面图直链；加载失败会自动显示「无封面」占位
+- `cover`：封面图直链或路径；加载失败会自动显示「无封面」占位
 - `type`：**支持 `epub`、`pdf`、`txt` 三种**（`txt` 走内置纯文本阅读器，自动按「第X章/卷/回/Chapter N/序章/楔子/番外」切分章节）
-- `url`：电子书文件公共直链（epub / pdf / txt 通用）
+- `url` / `cover`：**只写相对路径（key）**，`https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/` 前缀已由前端常量 `R2_BASE` 自动拼接 —— 这样能显著减小 `books.json` 体积。例如文件在 `book/xxx.epub` 就填 `"url": "book/xxx.epub"`；若填完整 `https://...` 直链也能兼容（前端 `resolveUrl` 会原样返回）。
+
+> 📌 **批量补全（已用于 1500 本 txt 骨架）**：`url` 一律填 R2 相对路径；`title` 取文件名去扩展名；若文件名含「作者：xxx」会自动提取到 `author` 并从标题剔除；`category` 按标题关键词自动细分（言情情感 / 都市 / 校园青春 / 武侠 / 玄幻奇幻 / 同人 / 悬疑灵异 / 科幻末世 / 历史军事 / 游戏竞技 / 同人，未命中归「小说」）。规则见 `tools/build_books.py`（可复用）。
 
 新增一本书 = 在数组中追加一个对象；删除 = 移除对应对象。改完保存即生效（Cloudflare 会按 `no-cache` 实时拉取 `books.json`）。
 

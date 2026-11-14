@@ -102,6 +102,10 @@
 (function () {
   const $ = (id) => document.getElementById(id);
 
+  // R2 公共域名前缀：books.json 中 url 只存路径(key)，运行时拼回完整直链，省体积
+  const R2_BASE = 'https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/';
+  const resolveUrl = (v) => (v ? R2_BASE + v : '');
+
   // ---------- 账号登录 + 进度云同步（Pages Functions + KV） ----------
   const AUTH_KEY = 'ebook_token', USER_KEY = 'ebook_user';
   function getToken() { try { return localStorage.getItem(AUTH_KEY); } catch (e) { return null; } }
@@ -387,7 +391,7 @@
       $('bgToggle').textContent = bgModes[0].name;
       $('bgToggle').onclick = () => { bgIndex = (bgIndex + 1) % bgModes.length; applyTheme(); };
 
-      fetch(book.url).then(r => {
+      fetch(resolveUrl(book.url)).then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.arrayBuffer();
       }).then(buf => render(decode(buf))).catch(err => {
@@ -399,7 +403,7 @@
     if (book.type === 'pdf') {
       $('loading').classList.add('hidden');
       $('pdfFrame').classList.remove('hidden');
-      $('pdfFrame').src = book.url;
+      $('pdfFrame').src = resolveUrl(book.url);
       return;
     }
 
@@ -437,7 +441,7 @@
     try { savedCfi = localStorage.getItem(progressKey); } catch (e) {}
 
     try {
-      bookObj = ePub(book.url);
+      bookObj = ePub(resolveUrl(book.url));
     } catch (e) {
       showError('epub.js 初始化失败：' + e.message);
       return;
