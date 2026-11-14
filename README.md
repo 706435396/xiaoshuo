@@ -142,6 +142,24 @@ python tools/txt_to_epub.py 小说.txt -o 小说.epub --title "小说名" --auth
 
 转换后把 `.epub` 上传到 R2 的 `book/` 目录，并把该条目 `type` 改回 `"epub"` 即可，章节目录会自动生成、epub.js 目录跳转开箱即用。
 
+### 进一步：TXT 体积优化（gzip 预压缩，省存储 + 省流量）
+
+txt 是纯文本，体积大且出流量贵。仓库自带 `tools/upload_r2.py` 可在上传时**自动 gzip 预压缩**并设置 `Content-Encoding: gzip`：浏览器 `fetch` 会**透明解压**，前端代码零改动，存储和出流量通常省 70%~85%。
+
+```bash
+# 上传单个 txt（自动 gzip，键为 book/xxx.txt）
+R2_ACCOUNT_ID=xxx R2_ACCESS_KEY_ID=xxx R2_SECRET_ACCESS_KEY=xxx R2_BUCKET=ebook \
+  python tools/upload_r2.py novel.txt --key book/novel.txt
+
+# 上传整个目录（保留结构，文本类自动 gzip）
+... python tools/upload_r2.py ./books --prefix book
+
+# 只预览压缩前后体积，不实际上传
+python tools/upload_r2.py ./books --prefix book --dry
+```
+
+> 说明：凭证只从环境变量读取（不落盘）。`r2.dev` 公共域**不会**自动压缩，因此自己预压缩是最稳的做法；上传后浏览器端的 `fetch` 会按 `Content-Encoding` 自动解压，`read.html` 的 txt 阅读分支无需任何改动。
+
 ## 推荐存储方案：Cloudflare R2
 
 电子书文件（epub / pdf / txt）与封面图建议存放在 **Cloudflare R2**，获取公共直链填入 `books.json`：
