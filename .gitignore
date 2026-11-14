@@ -1,0 +1,12 @@
+# 本地生成的封面（已上传 R2，不进仓库）
+covers/
+covers_upload.txt
+covers_upload_parallel.txt
+
+# R2 上传清单
+r2_urls.txt
+
+# Python
+__pycache__/
+*.pyc
+.env
