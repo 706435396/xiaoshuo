@@ -288,6 +288,18 @@
     );
   }
 
+  // 类型角标：根据书籍 type 返回彩色标签（txt / epub / pdf）
+  const TYPE_BADGE = {
+    txt:  { label: 'TXT',  cls: 'bg-sky-600' },
+    epub: { label: 'EPUB', cls: 'bg-purple-600' },
+    pdf:  { label: 'PDF',  cls: 'bg-rose-600' },
+  };
+  function typeBadge(type) {
+    const t = (type || '').toLowerCase();
+    const info = TYPE_BADGE[t] || { label: (type || '?').toUpperCase(), cls: 'bg-gray-600' };
+    return '<span class="absolute bottom-2 left-2 z-10 px-2 py-0.5 rounded text-[11px] font-semibold text-white ' + info.cls + ' shadow">' + info.label + '</span>';
+  }
+
   // 单张卡片 HTML（含收藏按钮 + 星级评分），首页与随机推荐共用
   function cardHtml(b) {
     const fav = isFav(b.id);
@@ -299,7 +311,10 @@
     return '<a href="read.html?id=' + b.id + '" class="card-shadow relative block rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a] hover:-translate-y-0.5 transition">' +
       (resume ? '<span class="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[11px] bg-emerald-600 text-white">续读</span>' : '') +
       '<button class="fav-btn absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center text-sm ' + (fav ? 'bg-rose-500 text-white' : 'bg-black/30 text-white') + '" data-id="' + b.id + '" title="收藏">♥</button>' +
-      '<img src="' + resolveUrl(b.cover) + '" onerror="coverFallback(this)" alt="' + b.title + '" class="w-full aspect-[3/4] object-cover bg-gray-100 dark:bg-[#222]" loading="lazy" decoding="async" />' +
+      '<div class="relative">' +
+        '<img src="' + resolveUrl(b.cover) + '" onerror="coverFallback(this)" alt="' + b.title + '" class="w-full aspect-[3/4] object-cover bg-gray-100 dark:bg-[#222]" loading="lazy" decoding="async" />' +
+        typeBadge(b.type) +
+      '</div>' +
       '<div class="p-3">' +
         '<h3 class="font-medium text-sm line-clamp-1">' + b.title + '</h3>' +
         '<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">' + (b.author || '未知作者') + '</p>' +
