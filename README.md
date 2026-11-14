@@ -1,7 +1,7 @@
 # 极简电子书静态网站（epub.js 在线阅读器）
 
 一个**纯静态、无后端、无 Node 构建**的电子书索引网站，可直接部署在 **GitHub + Cloudflare Pages**。
-内置 [epub.js](https://github.com/futurepress/epub.js/) 在线阅读器，支持 epub 在线渲染与 pdf 浏览器内置预览。
+内置 [epub.js](https://github.com/futurepress/epub.js/) 在线阅读器，支持 epub 在线渲染、pdf 浏览器内置预览，以及 **txt 纯文本直接阅读（自动切分章节）**。
 采用 MIT 协议，**仅做书籍索引，不内置任何电子书实体文件**，合规优先。
 
 ## 特性
@@ -17,7 +17,8 @@
 | 文件 | 说明 |
 | --- | --- |
 | `index.html` | 首页：书籍列表、搜索、分类、分页 |
-| `read.html` | 阅读页：epub.js 阅读器（pdf 走浏览器预览） |
+| `read.html` | 阅读页：epub.js 阅读器（pdf 走浏览器预览，txt 走内置纯文本阅读器） |
+| `tools/txt_to_epub.py` | 纯标准库脚本：把 txt 小说转成合规 EPUB（自动切章，无需 pip 安装） |
 | `books.json` | 书库数据，手动维护 |
 | `_headers` | Cloudflare Pages 缓存策略（Brotli 由 CF 自动压缩） |
 | `404.html` | 404 页面 |
@@ -109,14 +110,41 @@ npx serve .
 - `id`：唯一数字，首页跳转与阅读页读取都依赖它，**不要重复**
 - `title` / `author` / `category` / `intro`：展示用文本
 - `cover`：封面图直链；加载失败会自动显示「无封面」占位
-- `type`：**仅支持 `epub` 或 `pdf`** 两种
-- `url`：电子书文件公共直链
+- `type`：**支持 `epub`、`pdf`、`txt` 三种**（`txt` 走内置纯文本阅读器，自动按「第X章/卷/回/Chapter N/序章/楔子/番外」切分章节）
+- `url`：电子书文件公共直链（epub / pdf / txt 通用）
 
 新增一本书 = 在数组中追加一个对象；删除 = 移除对应对象。改完保存即生效（Cloudflare 会按 `no-cache` 实时拉取 `books.json`）。
 
+## TXT 纯文本小说支持（无需转换即可读）
+
+很多小说素材是 `.txt`，本项目阅读器原生支持，无需任何转换：
+
+1. 把 `type` 设为 `"txt"`，`url` 指向 `.txt` 公共直链（和其他格式一样放 R2）。
+2. 阅读器进入后会自动：
+   - **编码自适应**：优先 UTF-8，失败自动回退 GBK / GB18030（解决中文 txt 乱码）。
+   - **自动切章**：按「第X章 / 第X卷 / 第X回 / Chapter N / 序章 / 楔子 / 番外 / 后记」等生成目录，顶部「目录」下拉可直接跳转。
+   - **复用阅读体验**：背景配色（默认 / 羊皮纸 / 护眼绿 / 夜间）、字体缩放、整屏翻页、收藏、评分、进度备份全部可用。
+   - **进度记忆**：按滚动百分比存入 `localStorage`（与 epub 同一套进度体系），再次打开自动定位。
+
+> ⚠️ **txt 同样需要 CORS**：阅读器通过 `fetch` 拉取 txt 文本，R2 桶的 CORS 必须包含你的站点域名（与 epub 相同配置）。
+
+### 想要最佳排版？把 txt 转成 epub（可选）
+
+若追求 epub.js 的原生分页 / 流式重排，可用仓库自带脚本一键转换（**纯 Python 标准库，无需 pip install**）：
+
+```bash
+# 基础：输出与输入同名的 .epub
+python tools/txt_to_epub.py 小说.txt
+
+# 指定输出 / 书名 / 作者
+python tools/txt_to_epub.py 小说.txt -o 小说.epub --title "小说名" --author "作者名"
+```
+
+转换后把 `.epub` 上传到 R2 的 `book/` 目录，并把该条目 `type` 改回 `"epub"` 即可，章节目录会自动生成、epub.js 目录跳转开箱即用。
+
 ## 推荐存储方案：Cloudflare R2
 
-电子书文件（epub / pdf）与封面图建议存放在 **Cloudflare R2**，获取公共直链填入 `books.json`：
+电子书文件（epub / pdf / txt）与封面图建议存放在 **Cloudflare R2**，获取公共直链填入 `books.json`：
 
 1. 在 Cloudflare 控制台创建 R2 存储桶（如 `ebooks`）。
 2. 上传 epub / pdf / 封面图，设置为**公共访问**（Public），复制其 `https://<bucket>.<account>.r2.cloudflarestorage.com/...` 直链，或绑定自定义域。
@@ -138,7 +166,7 @@ npx serve .
 
 - [ ] `books.json` 里所有 `url` / `cover` 均为 **https** 直链，且不是网盘跳转页 / 中转页（应是文件本体可直接访问或下载）。
 - [ ] 仓库内**文件名无中文、无空格**（源码文件均为 ASCII，含 `functions/api/` 下的 Functions 文件，已合规）。
-- [ ] 每条 `type` 与文件后缀一致：`epub` 对应 `.epub`，`pdf` 对应 `.pdf`。
+- [ ] 每条 `type` 与文件后缀一致：`epub` 对应 `.epub`，`pdf` 对应 `.pdf`，`txt` 对应 `.txt`。
 - [ ] `sitemap.xml` 里的 `https://your-domain.pages.dev` 已替换成你自己的真实域名。
 - [ ] 本地先用 `python -m http.server 8080` 跑一遍，确认首页列表、搜索、分类、排序正常，且阅读器能加载 epub / 预览 pdf。
 - [ ] （epub）R2 直链已开启 CORS（`Access-Control-Allow-Origin` 包含你的域名）。

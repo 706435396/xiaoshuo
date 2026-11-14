@@ -20,5 +20,16 @@
     "type": "pdf",
     "url": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/book/test-b.pdf",
     "hot": false
+  },
+  {
+    "id": 3,
+    "title": "测试书籍C（纯文本TXT示例）",
+    "author": "作者C",
+    "category": "小说",
+    "cover": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/cover/test-c.jpg",
+    "intro": "TXT 示例条目：把 type 设为 txt，url 指向 .txt 文件即可，阅读器会自动切分章节（占位，需上传 test-c.txt 后可用）",
+    "type": "txt",
+    "url": "https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/book/test-c.txt",
+    "hot": false
   }
 ]

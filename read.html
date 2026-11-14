@@ -93,6 +93,11 @@
   <!-- pdf 预览容器 -->
   <iframe id="pdfFrame" class="hidden flex-1 w-full border-0 bg-white"></iframe>
 
+  <!-- txt 阅读容器 -->
+  <div id="txtWrap" class="hidden flex-1 overflow-hidden bg-white dark:bg-[#121212]">
+    <div id="txtContent" class="mx-auto max-w-[760px] h-full overflow-y-auto px-6 py-8" style="font-size:17px;line-height:1.9"></div>
+  </div>
+
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -284,6 +289,112 @@
     $('importFile').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importBackup(f); e.target.value = ''; });
     refreshFav(); renderRateStars();
 
+    // ---------- TXT 阅读器 ----------
+    function initTxtReader(book) {
+      const wrap = $('txtContent');
+      const bgModes = [
+        { name: '默认', bg: '#ffffff', fg: '#222222' },
+        { name: '羊皮纸', bg: '#f8f1e3', fg: '#5b4a3a' },
+        { name: '护眼绿', bg: '#c7edcc', fg: '#234d2b' },
+        { name: '夜间', bg: '#1a1a1a', fg: '#cfcfcf' }
+      ];
+      let bgIndex = 0, fontSize = 17;
+      const progressKey = 'ebook_progress_' + id;
+      let savedPct = parseFloat(localStorage.getItem(progressKey) || '0') || 0;
+
+      function applyTheme() {
+        const m = bgModes[bgIndex];
+        wrap.style.background = m.bg;
+        wrap.style.color = m.fg;
+        $('txtWrap').style.background = m.bg;
+      }
+      function applyFont() { wrap.style.fontSize = fontSize + 'px'; }
+
+      // 解码：优先 UTF-8（强制），失败回退 GBK（中文 txt 常见编码）
+      function decode(buf) {
+        try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+        catch (e) { return new TextDecoder('gbk').decode(buf); }
+      }
+
+      // 章节切分：匹配「第X章/卷/回…」「Chapter N」「序章/楔子/番外」等
+      const CHAPTER_RE = /^\s*(第\s*[0-9零一二三四五六七八九十百千万两]+\s*[章卷回部篇节集]|[Cc]hapter\s+\d+|序章|序言|前言|引言|后记|尾声|楔子|番外)\b/;
+      function splitChapters(text) {
+        const lines = text.split(/\r?\n/);
+        const chapters = [];
+        let cur = null;
+        for (const line of lines) {
+          if (CHAPTER_RE.test(line)) {
+            if (cur) chapters.push(cur);
+            cur = { title: (line.trim().slice(0, 40)) || ('第' + (chapters.length + 1) + '节'), paras: [] };
+          } else {
+            if (!cur) cur = { title: '正文', paras: [] };
+            if (line.trim()) cur.paras.push(line.trim());
+          }
+        }
+        if (cur) chapters.push(cur);
+        if (!chapters.length) chapters.push({ title: '全文', paras: lines.filter(l => l.trim()) });
+        return chapters;
+      }
+
+      function esc(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+
+      function render(text) {
+        const chapters = splitChapters(text);
+        const html = chapters.map((c, i) =>
+          '<section id="chap-' + i + '" data-chapter="' + i + '">' +
+          '<h2 style="font-size:1.2em;font-weight:600;margin:.9em 0 .5em;border-bottom:1px solid rgba(128,128,128,.2);padding-bottom:.3em">' + esc(c.title) + '</h2>' +
+          c.paras.map(p => '<p style="margin:0 0 1em;text-indent:2em;line-height:1.9">' + esc(p) + '</p>').join('') +
+          '</section>'
+        ).join('');
+        wrap.innerHTML = html;
+        const sel = $('tocSelect');
+        sel.innerHTML = '<option value="">目录</option>' + chapters.map((c, i) => '<option value="' + i + '">' + esc(c.title.slice(0, 30)) + '</option>').join('');
+        sel.onchange = () => { const i = +sel.value; if (i >= 0) { const el = $('chap-' + i); if (el) el.scrollIntoView({ behavior: 'smooth' }); } };
+        applyTheme(); applyFont();
+        requestAnimationFrame(() => {
+          const max = wrap.scrollHeight - wrap.clientHeight;
+          if (max > 0 && savedPct > 0) wrap.scrollTop = Math.round(savedPct * max);
+          updateTxtProgress();
+        });
+      }
+
+      function updateTxtProgress() {
+        const max = wrap.scrollHeight - wrap.clientHeight;
+        const pct = max > 0 ? wrap.scrollTop / max : 0;
+        const el = $('progressText');
+        el.classList.remove('hidden');
+        el.textContent = '已读 ' + Math.round(pct * 100) + '%';
+      }
+
+      let savedTimer = null;
+      function saveTxtProgress() {
+        const max = wrap.scrollHeight - wrap.clientHeight;
+        const pct = max > 0 ? wrap.scrollTop / max : 0;
+        try { localStorage.setItem(progressKey, pct.toFixed(4)); } catch (e) {}
+        syncPush();
+      }
+      wrap.addEventListener('scroll', () => {
+        updateTxtProgress();
+        clearTimeout(savedTimer);
+        savedTimer = setTimeout(saveTxtProgress, 400);
+      }, { passive: true });
+
+      // 控件复用：翻页=整屏滚动，字体 +-，背景切换
+      $('prevBtn').onclick = () => wrap.scrollBy({ top: -wrap.clientHeight * 0.9, behavior: 'smooth' });
+      $('nextBtn').onclick = () => wrap.scrollBy({ top: wrap.clientHeight * 0.9, behavior: 'smooth' });
+      $('fontDec').onclick = () => { fontSize = Math.max(13, fontSize - 1); applyFont(); };
+      $('fontInc').onclick = () => { fontSize = Math.min(30, fontSize + 1); applyFont(); };
+      $('bgToggle').textContent = bgModes[0].name;
+      $('bgToggle').onclick = () => { bgIndex = (bgIndex + 1) % bgModes.length; applyTheme(); };
+
+      fetch(book.url).then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.arrayBuffer();
+      }).then(buf => render(decode(buf))).catch(err => {
+        showError('TXT 加载失败：' + err.message + '（请确认链接有效且 R2 已开启 CORS）');
+      });
+    }
+
     // PDF：使用浏览器内置预览打开链接
     if (book.type === 'pdf') {
       $('loading').classList.add('hidden');
@@ -292,7 +403,16 @@
       return;
     }
 
-    // 仅支持 epub / pdf
+    // TXT 阅读器：纯文本直接渲染，自动切分章节，复用主题 / 字体 / 进度
+    if (book.type === 'txt' || /\.txt$/i.test(book.url || '')) {
+      $('loading').classList.add('hidden');
+      $('txtWrap').classList.remove('hidden');
+      $('epubControls').classList.remove('hidden');
+      initTxtReader(book);
+      return;
+    }
+
+    // 仅支持 epub / pdf / txt
     if (book.type !== 'epub') { showError('不支持的书籍类型：' + (book.type || '未知')); return; }
 
     // EPUB 阅读器
