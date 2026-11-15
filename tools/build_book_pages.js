@@ -163,9 +163,10 @@ function bookPageHtml(book, preview) {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>${esc(title)} - ${esc(author)} - 在线阅读 | 电子书库</title>
+<title>${esc(title)} - ${esc(author)} - 在线阅读 | 深夜文库</title>
 <meta name="description" content="${escAttr(desc)}" />
 <meta name="keywords" content="${escAttr(keywords)}" />
+<meta name="rating" content="adult" />
 <link rel="canonical" href="${SITE}/book/${id}" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>
@@ -199,7 +200,7 @@ function bookPageHtml(book, preview) {
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a href="../">电子书库</a> &gt; <a href="../category/${catSlug(category)}">${esc(category)}</a> &gt; <span>${esc(title)}</span></div>
+  <div class="crumb"><a href="../">深夜文库</a> &gt; <a href="../category/${catSlug(category)}">${esc(category)}</a> &gt; <span>${esc(title)}</span></div>
 
   <h1>${esc(title)}</h1>
   <div class="sub">
@@ -224,7 +225,7 @@ function bookPageHtml(book, preview) {
     <ul class="rel-list">${rel}</ul>
   </section>
 
-  <div class="foot"><a href="../">返回电子书库首页</a> · 共 ${books.length} 本在线书库</div>
+  <div class="foot"><a href="../">返回深夜文库首页</a> · 共 ${books.length} 本在线小说</div>
 </div>
 </body>
 </html>`;
@@ -242,7 +243,7 @@ function catSlug(name) { return CAT_SLUG[name] || ('cat-' + Buffer.from(String(n
 function categoryPageHtml(cat, list, allCats) {
   const n = list.length;
   const slug = catSlug(cat);
-  const title = cat + '小说在线阅读_' + cat + '小说大全 - 电子书库';
+  const title = cat + '小说在线阅读_' + cat + '小说大全 - 深夜文库';
   const desc = (cat + '小说在线阅读，本站收录 ' + n + ' 本' + cat + '类电子书，提供章节目录、正文试读与在线阅读。' +
     cat + '小说大全，按更新排序，免费在线看。').slice(0, 160);
   const keywords = [cat + '小说', cat + '小说在线阅读', cat + '小说大全', cat + '电子书', '在线阅读', '小说'].join(',');
@@ -281,6 +282,7 @@ function categoryPageHtml(cat, list, allCats) {
 <title>${esc(title)}</title>
 <meta name="description" content="${escAttr(desc)}" />
 <meta name="keywords" content="${escAttr(keywords)}" />
+<meta name="rating" content="adult" />
 <link rel="canonical" href="${SITE}/category/${slug}" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>
@@ -306,7 +308,7 @@ function categoryPageHtml(cat, list, allCats) {
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a href="../">电子书库</a> &gt; <span>${esc(cat)}</span></div>
+  <div class="crumb"><a href="../">深夜文库</a> &gt; <span>${esc(cat)}</span></div>
   <h1><em>${esc(cat)}</em>小说在线阅读</h1>
   <p class="lead">${esc(desc)} 共收录 <strong style="color:var(--orange)">${n}</strong> 本${esc(cat)}小说，点击书名可查看详情、章节目录与正文试读。</p>
 
@@ -320,7 +322,7 @@ function categoryPageHtml(cat, list, allCats) {
     <div class="cats">${other}</div>
   </section>
 
-  <div class="foot"><a href="../">返回电子书库首页</a> · 全站共 ${books.length} 本在线小说</div>
+  <div class="foot"><a href="../">返回深夜文库首页</a> · 全站共 ${books.length} 本在线小说</div>
 </div>
 </body>
 </html>`;

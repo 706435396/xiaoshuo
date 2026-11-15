@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>阅读器</title>
+  <title>在线阅读｜深夜文库</title>
+  <meta name="description" content="深夜文库在线阅读器，支持 txt 自动切章、进度记忆，原创中文成人文学与长篇故事。" />
+  <meta name="rating" content="adult" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%234b5563'/%3E%3Crect%20x='9'%20y='8'%20width='3'%20height='16'%20rx='1'%20fill='white'/%3E%3Crect%20x='14'%20y='8'%20width='9'%20height='16'%20rx='1'%20fill='white'%20opacity='.85'/%3E%3C/svg%3E" />
   <script>
     (function () {
@@ -296,7 +298,7 @@
     const tlabel = (book.type || '?').toUpperCase();
     const tcls = TYPE_CLS[tkey] || 'bg-gray-600';
     $('bookTitle').innerHTML = '<span class="shrink-0 mr-2 px-2 py-0.5 rounded text-[11px] font-semibold text-white ' + tcls + '">' + tlabel + '</span>' + (book.title || '阅读器');
-    document.title = (book.title || '阅读器') + ' · 阅读器';
+    document.title = (book.title || '在线阅读') + ' - 在线阅读｜深夜文库';
 
     // 收藏 / 评分 / 进度备份控件（epub 与 pdf 通用）
     function refreshFav() {
