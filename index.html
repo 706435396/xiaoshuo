@@ -58,7 +58,7 @@
   <main class="max-w-7xl mx-auto px-4 py-6 flex items-start gap-6">
 
     <!-- 左侧：分类侧栏（桌面） -->
-    <aside class="hidden lg:block w-48 shrink-0 sticky top-20">
+    <aside class="hidden lg:block w-52 shrink-0 sticky top-20">
       <div class="rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-3">
         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 px-1">分类</h3>
         <div id="catList" class="space-y-1"></div>
@@ -364,18 +364,44 @@
     }
   });
 
-  // ---------- 分类（左侧侧栏 + 移动端横滑） ----------
+  // ---------- 分类（左侧侧栏：图标左侧模式 + 数量；移动端横滑同步） ----------
+  // 固定分类体系（取自用户截图），顺序即展示顺序
+  const FIXED_CATEGORIES = ['全部','都市激情','校园之恋','人妻熟女','家庭乱伦','经验故事','真实体验','猎奇另类','短篇笑话','古典武侠','91博客'];
+  // 每个分类左侧的小图标（彩色圆角方块 + emoji，轻量、无需外部图片）
+  const CAT_ICONS = {
+    '全部':     { e: '📚', c: '#6b7280' },
+    '都市激情': { e: '🌆', c: '#ff9500' },
+    '校园之恋': { e: '🎓', c: '#3b82f6' },
+    '人妻熟女': { e: '💃', c: '#ec4899' },
+    '家庭乱伦': { e: '🏠', c: '#8b5cf6' },
+    '经验故事': { e: '💡', c: '#f59e0b' },
+    '真实体验': { e: '📝', c: '#22c55e' },
+    '猎奇另类': { e: '🔮', c: '#7c3aed' },
+    '短篇笑话': { e: '😄', c: '#eab308' },
+    '古典武侠': { e: '⚔️', c: '#ef4444' },
+    '91博客':  { e: '✍️', c: '#14b8a6' },
+  };
+  function catIconHtml(name) {
+    const ic = CAT_ICONS[name] || { e: '📁', c: '#6b7280' };
+    return '<span class="inline-flex items-center justify-center w-6 h-6 rounded-md text-[13px] shrink-0" style="background:' + ic.c + '22;color:' + ic.c + '">' + ic.e + '</span>';
+  }
+  function catCount(name) {
+    if (name === '全部') return books.length;
+    return books.filter(b => b.category === name).length;
+  }
   function renderCategories() {
-    const cats = ['全部', ...Array.from(new Set(books.map(b => b.category).filter(Boolean)))];
-    const listHtml = cats.map(c =>
-      '<button data-cat="' + c + '" class="cat-btn w-full text-left px-3 py-2 rounded-lg text-sm transition ' +
+    const listHtml = FIXED_CATEGORIES.map(c =>
+      '<button data-cat="' + c + '" class="cat-btn flex items-center gap-2 w-full text-left px-2.5 py-2 rounded-lg text-sm transition ' +
       (c === activeCategory ? 'bg-[#ff9500] text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-gray-900 dark:hover:text-white') +
-      '">' + c + '</button>'
+      '">' + catIconHtml(c) +
+      '<span class="flex-1 truncate">' + c + '</span>' +
+      '<span class="text-[11px] opacity-60 shrink-0 tabular-nums">' + catCount(c) + '</span>' +
+      '</button>'
     ).join('');
-    const barHtml = cats.map(c =>
-      '<button data-cat="' + c + '" class="cat-btn shrink-0 px-3 py-1 rounded-full text-sm border whitespace-nowrap ' +
+    const barHtml = FIXED_CATEGORIES.map(c =>
+      '<button data-cat="' + c + '" class="cat-btn shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border whitespace-nowrap ' +
       (c === activeCategory ? 'bg-[#ff9500] text-white border-[#ff9500]' : 'bg-white dark:bg-[#141414] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-[#333]') +
-      '">' + c + '</button>'
+      '">' + catIconHtml(c) + c + '</button>'
     ).join('');
     if ($('catList')) $('catList').innerHTML = listHtml;
     if ($('catBar')) $('catBar').innerHTML = barHtml;
@@ -502,7 +528,7 @@
     currentRandom = ids.slice(0, Math.min(6, ids.length));
   }
   function populateRandomCat() {
-    $('randomCat').innerHTML = ['全部', ...allCategories].map(c => '<option value="' + c + '">' + c + '</option>').join('');
+    $('randomCat').innerHTML = FIXED_CATEGORIES.map(c => '<option value="' + c + '">' + c + '</option>').join('');
   }
   function setExcludeRead(on) {
     excludeRead = on;
@@ -619,7 +645,7 @@
   // 加载书库数据
   fetch('books.json').then(r => r.json()).then(data => {
     books = Array.isArray(data) ? data : [];
-    allCategories = Array.from(new Set(books.map(b => b.category).filter(Boolean)));
+    allCategories = FIXED_CATEGORIES.filter(c => c !== '全部');
     populateRandomCat();
     renderCategories();
     renderShelf();
