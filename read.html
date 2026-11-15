@@ -356,12 +356,45 @@
       // 章节切分：匹配「第X章/卷/回…」「Chapter N」「序章/楔子/番外」「一、二、」「（一）」「1.」等
       // 注意：结尾不能用 \b —— JS 中中文不是 \w，\b 会导致所有中文章节标题一律识别失败，整本塌成 1 章。
       const CHAPTER_RE = /^\s*(?:第\s*[0-9零一二三四五六七八九十百千万两]+\s*[章卷回部篇节集]|[Cc]hapter\s+\d+|序章|序言|前言|引言|后记|尾声|楔子|番外|[一二三四五六七八九十百千]+\s*[、﹑.．]|[（(][一二三四五六七八九十百千]+[)）]|\d+\s*[、.．])/;
-      function splitChapters(text) {
+      // 纯流水文本（完全没有章节标题）自动切块大小：约 2000 字一节
+      const AUTO_CHUNK_SIZE = 2000;
+
+      // 无章节标题的纯文本：按字数切成「第 N 段」，尽量不切断段落/句子
+      function autoChunkBySize(text, size) {
+        const lines = text.split(/\r?\n/);
+        const chunks = [];
+        let buf = [], count = 0;
+        function flush() {
+          if (buf.length) {
+            chunks.push({ title: '第 ' + (chunks.length + 1) + ' 段', paras: buf });
+            buf = []; count = 0;
+          }
+        }
+        for (let raw of lines) {
+          const t = raw.trim();
+          if (!t) continue;
+          if (t.length > size) {            // 单行超长：按字数硬切
+            flush();
+            for (let i = 0; i < t.length; i += size) { buf = [t.slice(i, i + size)]; flush(); }
+            continue;
+          }
+          if (count > 0 && count + t.length > size) flush();
+          buf.push(t); count += t.length;
+        }
+        flush();
+        if (!chunks.length) chunks.push({ title: '全文', paras: lines.filter(l => l.trim()) });
+        return chunks;
+      }
+
+      // 章节切分：优先正则识别章节标题；若全文没有任何章节标题（纯流水），
+      // 则退化为按 AUTO_CHUNK_SIZE 字数自动切块，保证可逐章翻阅。
+      function buildChapters(text) {
         const lines = text.split(/\r?\n/);
         const res = [];
-        let cur = null;
+        let cur = null, hasMarker = false;
         for (const line of lines) {
           if (CHAPTER_RE.test(line)) {
+            hasMarker = true;
             if (cur) res.push(cur);
             cur = { title: (line.trim().slice(0, 40)) || ('第' + (res.length + 1) + '节'), paras: [] };
           } else {
@@ -370,8 +403,8 @@
           }
         }
         if (cur) res.push(cur);
-        if (!res.length) res.push({ title: '全文', paras: lines.filter(l => l.trim()) });
-        return res;
+        if (res.length > 1 || hasMarker) return res.length ? res : [{ title: '全文', paras: lines.filter(l => l.trim()) }];
+        return autoChunkBySize(text, AUTO_CHUNK_SIZE);
       }
 
       function esc(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
@@ -455,7 +488,7 @@
         return r.arrayBuffer();
       }).then(buf => {
         const text = decode(buf);
-        chapters = splitChapters(text);
+        chapters = buildChapters(text);
         chapterStart = []; chapterLen = []; totalChars = 0;
         for (const c of chapters) {
           chapterStart.push(totalChars);
