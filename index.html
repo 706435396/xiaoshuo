@@ -33,18 +33,21 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-[#000] dark:text-gray-200 transition-colors min-h-screen">
+<body class="bg-gray-50 text-gray-800 dark:bg-[#0d0d0d] dark:text-gray-200 transition-colors min-h-screen">
 
   <!-- 顶部导航栏 -->
-  <header class="sticky top-0 z-20 bg-white/90 dark:bg-[#0d0d0d]/90 backdrop-blur border-b border-gray-200 dark:border-[#262626]">
+  <header class="sticky top-0 z-20 bg-white/90 dark:bg-[#0d0d0d]/95 backdrop-blur border-b border-gray-200 dark:border-[#262626]">
     <div class="max-w-7xl mx-auto px-4 h-14 flex items-center gap-3">
-      <a href="index.html" class="font-semibold text-lg shrink-0 text-gray-800 dark:text-gray-100">📚 电子书库</a>
-      <div class="flex-1 max-w-xl mx-auto">
+      <a href="index.html" class="font-bold text-lg shrink-0 flex items-center gap-1 text-[#ff9500]">📚 电子书库</a>
+      <div class="flex-1 max-w-xl mx-auto flex items-center gap-2">
         <input id="search" type="search" placeholder="搜索书名 / 作者 / 分类"
-          class="w-full px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] border border-transparent dark:border-[#333] focus:border-gray-300 dark:focus:border-orange-500 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400" />
+          class="flex-1 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] border border-transparent dark:border-[#333] focus:border-[#ff9500] outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400" />
+        <button id="searchBtn" title="搜索" class="shrink-0 w-9 h-9 rounded-lg bg-[#ff9500] text-black flex items-center justify-center text-sm hover:opacity-90 transition">🔍</button>
       </div>
       <button id="authBtn" title="登录 / 注册"
-        class="shrink-0 px-3 h-9 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] dark:border dark:border-[#333] flex items-center justify-center text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#222] transition">登录</button>
+        class="shrink-0 flex items-center gap-2 px-3 h-9 rounded-full bg-[#ff9500]/15 text-[#ff9500] hover:bg-[#ff9500]/25 transition text-sm font-medium">
+        <span>👤</span><span id="authLabel">登录</span>
+      </button>
       <button id="themeToggle" title="切换主题"
         class="shrink-0 w-9 h-9 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] dark:border dark:border-[#333] flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#222] transition">
         <span id="themeIcon">☀️</span>
@@ -70,7 +73,7 @@
 
       <!-- Tabs：最新 / 精华 / 热门 -->
       <div class="flex gap-1 mb-5 border-b border-gray-200 dark:border-[#262626]">
-        <button id="sortLatest" class="tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-orange-500 text-orange-500 dark:text-orange-400">最新</button>
+        <button id="sortLatest" class="tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-[#ff9500] text-[#ff9500] dark:text-[#ffb84d]">最新</button>
         <button id="sortBest" class="tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">精华</button>
         <button id="sortHot" class="tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">热门</button>
         <button id="sortFav" class="hidden"></button>
@@ -98,7 +101,7 @@
             <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
           </div>
         </div>
-        <div id="randomGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        <div id="randomGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
       </section>
 
       <!-- 加载提示 -->
@@ -106,8 +109,8 @@
         <div class="spinner mb-3"></div><span class="text-sm">加载中…</span>
       </div>
 
-      <!-- 书籍列表（纯文字卡片，无封面） -->
-      <div id="bookGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+      <!-- 书籍列表（紧凑文字行，无封面，两列） -->
+      <div id="bookGrid" class="hidden grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
 
       <!-- 空状态 -->
       <div id="empty" class="hidden flex-col items-center justify-center py-20 text-gray-400">
@@ -233,7 +236,7 @@
   function updateAuthUI() {
     const b = $('authBtn'); if (!b) return;
     const u = getCurUser();
-    b.textContent = u ? (u + ' · 退出') : '登录';
+    const lab = $('authLabel'); if (lab) lab.textContent = u ? (u + ' · 退出') : '登录';
   }
   let authMode = 'login';
   function switchAuthTab(mode) {
@@ -304,30 +307,45 @@
     pdf:  { label: 'PDF',  cls: 'bg-rose-600' },
   };
 
-  // 单张卡片 HTML（纯文字，无封面；首页与随机推荐共用）
+  // 稳定的伪随机「阅读量 / 上架日期」（纯展示用假数据，按 id 派生，刷新不变）
+  function fakeViews(id) {
+    let x = (id * 2654435761) >>> 0;
+    x = (x ^ (x >>> 13)) >>> 0;
+    const n = 120 + (x % 9880);
+    return n >= 10000 ? (n / 10000).toFixed(1) + '万' : String(n);
+  }
+  function fakeDate(id) {
+    let x = (id * 40503 + 12345) >>> 0;
+    const daysAgo = x % 120;
+    const d = new Date(2026, 10, 15); // 基准日 = 今天
+    d.setDate(d.getDate() - daysAgo);
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
+  // 单张卡片 HTML（紧凑文字行，无封面；首页与随机推荐共用；贴合截图：作者+日期+阅读量）
   function cardHtml(b) {
     const fav = isFav(b.id);
     const rating = getRating(b.id);
     const stars = [1,2,3,4,5].map(v =>
-      '<span class="star cursor-pointer ' + (v <= rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600') + '" data-id="' + b.id + '" data-val="' + v + '">★</span>'
+      '<span class="star cursor-pointer ' + (v <= rating ? 'text-amber-400' : 'text-gray-400 dark:text-gray-600') + '" data-id="' + b.id + '" data-val="' + v + '">★</span>'
     ).join('');
     const t = ((b.type || '').toLowerCase());
     const info = TYPE_BADGE[t] || { label: (b.type || '?').toUpperCase(), cls: 'bg-gray-600' };
-    return '<a href="read.html?id=' + b.id + '" class="card relative block rounded-xl bg-white dark:bg-[#161616] border border-gray-200 dark:border-[#262626] hover:border-orange-500/60 dark:hover:border-orange-500/60 transition p-4 group">' +
-      '<div class="flex items-start justify-between gap-3">' +
-        '<h3 class="font-medium text-[15px] leading-snug text-gray-800 dark:text-gray-100 group-hover:text-orange-500 dark:group-hover:text-orange-400 line-clamp-2">' + b.title + '</h3>' +
+    return '<a href="read.html?id=' + b.id + '" class="card relative block rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] hover:border-[#ff9500]/70 dark:hover:border-[#ff9500]/70 transition px-3 py-2.5 group">' +
+      '<div class="flex items-start justify-between gap-2">' +
+        '<h3 class="font-medium text-[14px] leading-snug text-gray-800 dark:text-gray-100 group-hover:text-[#ff9500] dark:group-hover:text-[#ffb84d] truncate">' + b.title + '</h3>' +
         '<div class="flex items-center gap-1.5 shrink-0">' +
-          '<span class="px-2 py-0.5 rounded text-[11px] font-semibold text-white ' + info.cls + '">' + info.label + '</span>' +
-          '<button class="fav-btn w-7 h-7 rounded-full flex items-center justify-center text-sm ' + (fav ? 'bg-rose-500 text-white' : 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-400 dark:text-gray-400 hover:text-rose-400') + '" data-id="' + b.id + '" title="收藏">♥</button>' +
+          '<button class="fav-btn w-6 h-6 rounded-full flex items-center justify-center text-xs ' + (fav ? 'bg-rose-500 text-white' : 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-400 hover:text-rose-400') + '" data-id="' + b.id + '" title="收藏">♥</button>' +
+          '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white ' + info.cls + '">' + info.label + '</span>' +
         '</div>' +
       '</div>' +
-      '<div class="mt-3 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">' +
-        '<span class="flex items-center gap-1 truncate">👤 <span class="truncate max-w-[7rem]">' + (b.author || '未知作者') + '</span></span>' +
-        '<span class="flex items-center gap-1">📁 ' + (b.category || '未分类') + '</span>' +
-      '</div>' +
-      '<div class="mt-3 flex items-center justify-between">' +
-        '<span class="text-xs text-gray-400 dark:text-gray-500 select-none tracking-wide">' + stars + '</span>' +
-        '<span class="text-xs text-orange-500/80 dark:text-orange-400/80 group-hover:text-orange-500 dark:group-hover:text-orange-400">阅读 →</span>' +
+      '<div class="mt-1.5 flex items-center gap-2.5 text-[11px] text-gray-500 dark:text-gray-400">' +
+        '<span class="flex items-center gap-1 truncate max-w-[7rem]">👤 ' + (b.author || '未知') + '</span>' +
+        '<span class="flex items-center gap-1 shrink-0">🕐 ' + fakeDate(b.id) + '</span>' +
+        '<span class="flex items-center gap-1 shrink-0">👁 ' + fakeViews(b.id) + '</span>' +
+        '<span class="ml-auto shrink-0 flex items-center gap-0.5 select-none">' + stars + '</span>' +
       '</div>' +
     '</a>';
   }
@@ -351,12 +369,12 @@
     const cats = ['全部', ...Array.from(new Set(books.map(b => b.category).filter(Boolean)))];
     const listHtml = cats.map(c =>
       '<button data-cat="' + c + '" class="cat-btn w-full text-left px-3 py-2 rounded-lg text-sm transition ' +
-      (c === activeCategory ? 'bg-orange-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-gray-900 dark:hover:text-white') +
+      (c === activeCategory ? 'bg-[#ff9500] text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-gray-900 dark:hover:text-white') +
       '">' + c + '</button>'
     ).join('');
     const barHtml = cats.map(c =>
       '<button data-cat="' + c + '" class="cat-btn shrink-0 px-3 py-1 rounded-full text-sm border whitespace-nowrap ' +
-      (c === activeCategory ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#141414] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-[#333]') +
+      (c === activeCategory ? 'bg-[#ff9500] text-white border-[#ff9500]' : 'bg-white dark:bg-[#141414] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-[#333]') +
       '">' + c + '</button>'
     ).join('');
     if ($('catList')) $('catList').innerHTML = listHtml;
@@ -489,7 +507,7 @@
   function setExcludeRead(on) {
     excludeRead = on;
     $('excludeReadBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] transition ' +
-      (on ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+      (on ? 'bg-[#ff9500] text-white border-[#ff9500]' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
     pickRandom(); renderRandom();
   }
   function renderRandom() {
@@ -503,20 +521,20 @@
   function setRatingFirst(on) {
     ratingFirst = on;
     $('ratingFirstBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] transition ' +
-      (on ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+      (on ? 'bg-[#ff9500] text-white border-[#ff9500]' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
     pickRandom(); renderRandom();
   }
   $('ratingFirstBtn').addEventListener('click', () => setRatingFirst(!ratingFirst));
   function setFavFirst(on) {
     favFirst = on;
     $('favFirstBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] transition ' +
-      (on ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+      (on ? 'bg-[#ff9500] text-white border-[#ff9500]' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
     pickRandom(); renderRandom();
   }
   function setUnrated(on) {
     unratedOnly = on;
     $('unratedBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] transition ' +
-      (on ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+      (on ? 'bg-[#ff9500] text-white border-[#ff9500]' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
     pickRandom(); renderRandom();
   }
   $('favFirstBtn').addEventListener('click', () => setFavFirst(!favFirst));
@@ -526,7 +544,7 @@
   function renderPagination(pages) {
     let html = '<button ' + (currentPage === 1 ? 'disabled' : '') + ' data-page="' + (currentPage - 1) + '" class="px-3 py-1 rounded-lg text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] disabled:opacity-40">上一页</button>';
     for (let i = 1; i <= pages; i++) {
-      html += '<button data-page="' + i + '" class="px-3 py-1 rounded-lg text-sm ' + (i === currentPage ? 'bg-orange-500 text-white' : 'bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333]') + '">' + i + '</button>';
+      html += '<button data-page="' + i + '" class="px-3 py-1 rounded-lg text-sm ' + (i === currentPage ? 'bg-[#ff9500] text-white' : 'bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333]') + '">' + i + '</button>';
     }
     html += '<button ' + (currentPage === pages ? 'disabled' : '') + ' data-page="' + (currentPage + 1) + '" class="px-3 py-1 rounded-lg text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] disabled:opacity-40">下一页</button>';
     $('pagination').innerHTML = html;
@@ -539,11 +557,12 @@
   }
 
   $('search').addEventListener('input', (e) => { searchTerm = e.target.value; applyFilter(); });
+  $('searchBtn').addEventListener('click', () => { applyFilter(); });
 
   // 排序 Tabs：最新 / 精华 / 热门
   function setSort(mode) {
     sortMode = mode;
-    const on = 'tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-orange-500 text-orange-500 dark:text-orange-400';
+    const on = 'tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-[#ff9500] text-[#ff9500] dark:text-[#ffb84d]';
     const off = 'tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200';
     if ($('sortLatest')) $('sortLatest').className = mode === 'latest' ? on : off;
     if ($('sortBest')) $('sortBest').className = mode === 'best' ? on : off;
