@@ -16,6 +16,51 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/dushi</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/zhenshi</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/renqi</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/jingyan</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/gudian</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/xiaoyuan</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/jiating</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/lieqi</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xiaoshuo-5hn.pages.dev/category/blog91</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://xiaoshuo-5hn.pages.dev/book/1</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>

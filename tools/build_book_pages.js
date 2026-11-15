@@ -23,6 +23,7 @@ const ROOT = path.resolve(__dirname, '..');
 const BOOKS_PATH = path.join(ROOT, 'books.json');
 const OUT_DIR = path.join(ROOT, 'book');
 const CACHE_PATH = path.join(OUT_DIR, '_preview.json');
+const CAT_DIR = path.join(ROOT, 'category');
 const SITEMAP_PATH = path.join(ROOT, 'sitemap.xml');
 const SITE = 'https://xiaoshuo-5hn.pages.dev';
 const R2_BASE = 'https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/';
@@ -198,7 +199,7 @@ function bookPageHtml(book, preview) {
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a href="../">电子书库</a> &gt; <a href="../">${esc(category)}</a> &gt; <span>${esc(title)}</span></div>
+  <div class="crumb"><a href="../">电子书库</a> &gt; <a href="../category/${catSlug(category)}">${esc(category)}</a> &gt; <span>${esc(title)}</span></div>
 
   <h1>${esc(title)}</h1>
   <div class="sub">
@@ -229,6 +230,114 @@ function bookPageHtml(book, preview) {
 </html>`;
 }
 
+// ---------- 分类落地页（承接「XX小说在线阅读」类目级长尾） ----------
+// 分类 → URL slug（与 index.html 的 CAT_IMG 保持一致）
+const CAT_SLUG = {
+  '全部': 'all', '都市激情': 'dushi', '校园之恋': 'xiaoyuan', '人妻熟女': 'renqi',
+  '家庭乱伦': 'jiating', '经验故事': 'jingyan', '真实体验': 'zhenshi', '猎奇另类': 'lieqi',
+  '短篇笑话': 'duanpian', '古典武侠': 'gudian', '91博客': 'blog91'
+};
+function catSlug(name) { return CAT_SLUG[name] || ('cat-' + Buffer.from(String(name || 'other')).toString('hex').slice(0, 8)); }
+
+function categoryPageHtml(cat, list, allCats) {
+  const n = list.length;
+  const slug = catSlug(cat);
+  const title = cat + '小说在线阅读_' + cat + '小说大全 - 电子书库';
+  const desc = (cat + '小说在线阅读，本站收录 ' + n + ' 本' + cat + '类电子书，提供章节目录、正文试读与在线阅读。' +
+    cat + '小说大全，按更新排序，免费在线看。').slice(0, 160);
+  const keywords = [cat + '小说', cat + '小说在线阅读', cat + '小说大全', cat + '电子书', '在线阅读', '小说'].join(',');
+
+  const bookLis = list.map(b =>
+    '<li><a href="../book/' + escAttr(String(b.id)) + '">' + esc(b.title || ('书籍' + b.id)) + '</a>' +
+    '<span class="bmeta"> · ' + esc(b.author || '佚名') + ' · ' + esc((b.type || '').toUpperCase()) + '</span></li>'
+  ).join('');
+
+  const other = allCats.filter(c => c !== cat).map(c =>
+    '<a href="./' + escAttr(catSlug(c)) + '">' + esc(c) + '小说 (' + (byCat[c] || []).length + ')</a>'
+  ).join('');
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: cat + '小说在线阅读',
+    description: desc,
+    url: SITE + '/category/' + slug,
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: n,
+      itemListElement: list.slice(0, 50).map((b, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        item: { '@type': 'Book', name: b.title, url: SITE + '/book/' + b.id }
+      }))
+    }
+  };
+
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${esc(title)}</title>
+<meta name="description" content="${escAttr(desc)}" />
+<meta name="keywords" content="${escAttr(keywords)}" />
+<link rel="canonical" href="${SITE}/category/${slug}" />
+<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+<style>
+  :root{ --bg:#0d0d0d; --card:#161616; --fg:#e5e5e5; --muted:#9a9a9a; --orange:#ff9500; --line:#262626; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7}
+  a{color:var(--orange);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:920px;margin:0 auto;padding:24px 18px 60px}
+  .crumb{font-size:13px;color:var(--muted);margin-bottom:16px}
+  h1{font-size:24px;margin:0 0 8px;color:#fff}
+  h1 em{color:var(--orange);font-style:normal}
+  .lead{font-size:14px;color:#c9c9c9;margin:0 0 20px}
+  .block{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .sec-title{font-size:16px;margin:0 0 12px;color:#fff;border-left:3px solid var(--orange);padding-left:10px}
+  .books{list-style:none;padding:0;margin:0;columns:2;column-gap:28px}
+  .books li{font-size:14px;padding:4px 0;break-inside:avoid;border-bottom:1px solid var(--line)}
+  .bmeta{color:var(--muted);font-size:12px}
+  .cats a{display:inline-block;font-size:13px;padding:5px 10px;margin:0 6px 8px 0;background:var(--card);border:1px solid var(--line);border-radius:16px;color:#cfcfcf}
+  .cats a:hover{border-color:var(--orange);color:var(--orange);text-decoration:none}
+  .foot{margin-top:28px;font-size:13px;color:var(--muted);text-align:center}
+  @media(max-width:640px){ .books{columns:1} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../">电子书库</a> &gt; <span>${esc(cat)}</span></div>
+  <h1><em>${esc(cat)}</em>小说在线阅读</h1>
+  <p class="lead">${esc(desc)} 共收录 <strong style="color:var(--orange)">${n}</strong> 本${esc(cat)}小说，点击书名可查看详情、章节目录与正文试读。</p>
+
+  <section class="block">
+    <h2 class="sec-title">${esc(cat)}小说列表（共 ${n} 本）</h2>
+    <ul class="books">${bookLis}</ul>
+  </section>
+
+  <section class="block">
+    <h2 class="sec-title">其他分类</h2>
+    <div class="cats">${other}</div>
+  </section>
+
+  <div class="foot"><a href="../">返回电子书库首页</a> · 全站共 ${books.length} 本在线小说</div>
+</div>
+</body>
+</html>`;
+}
+
+function generateCategoryPages() {
+  if (!fs.existsSync(CAT_DIR)) fs.mkdirSync(CAT_DIR, { recursive: true });
+  const cats = Object.keys(byCat).filter(c => c && CAT_SLUG[c]);
+  let ok = 0;
+  for (const cat of cats) {
+    const list = byCat[cat].slice().sort((a, b) => (b.id || 0) - (a.id || 0));
+    fs.writeFileSync(path.join(CAT_DIR, catSlug(cat) + '.html'), categoryPageHtml(cat, list, cats), 'utf8');
+    ok++;
+  }
+  return ok;
+}
+
 // ---------- 生成所有书页 ----------
 function generatePages(previewMap) {
   if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -249,6 +358,10 @@ function writeSitemap() {
   urls.push({ loc: SITE + '/', priority: '1.0', freq: 'weekly' });
   urls.push({ loc: SITE + '/read', priority: '0.8', freq: 'weekly' });
   urls.push({ loc: SITE + '/404.html', priority: '0.3', freq: 'yearly' });
+  // 分类落地页（类目级长尾入口，优先级高于单本书）
+  for (const cat of Object.keys(byCat).filter(c => c && CAT_SLUG[c])) {
+    urls.push({ loc: SITE + '/category/' + catSlug(cat), priority: '0.8', freq: 'weekly' });
+  }
   for (const b of books) {
     urls.push({ loc: SITE + '/book/' + String(b.id), priority: '0.6', freq: 'weekly' });
   }
@@ -328,6 +441,7 @@ async function enrich() {
     console.log('[info] 检测到已有预览缓存 ' + Object.keys(previewMap).length + ' 条，将直接用于书页（加 --fetch 可补充）。');
   }
   const nPages = generatePages(previewMap);
+  const nCats = generateCategoryPages();
   const nSitemap = writeSitemap();
-  console.log('[done] 生成书页 ' + nPages + ' 个，sitemap URL 数 ' + nSitemap + '。');
+  console.log('[done] 生成书页 ' + nPages + ' 个，分类落地页 ' + nCats + ' 个，sitemap URL 数 ' + nSitemap + '。');
 })();

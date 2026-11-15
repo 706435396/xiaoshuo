@@ -325,6 +325,7 @@
   }
 
   // 单张卡片 HTML（紧凑文字行，无封面；首页与随机推荐共用；贴合截图：作者+日期+阅读量）
+  // SEO：外层用 <div> 而非 <a>，避免嵌套 <a>；标题链到 read.html 阅读，另有独立「详情」链到 book/{id}（真实可爬内链）
   function cardHtml(b) {
     const fav = isFav(b.id);
     const rating = getRating(b.id);
@@ -333,9 +334,10 @@
     ).join('');
     const t = ((b.type || '').toLowerCase());
     const info = TYPE_BADGE[t] || { label: (b.type || '?').toUpperCase(), cls: 'bg-gray-600' };
-    return '<a href="read.html?id=' + b.id + '&u=' + encodeURIComponent(b.url || '') + '&t=' + encodeURIComponent(b.title || '') + '" class="card relative block rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] hover:border-[#ff9500]/70 dark:hover:border-[#ff9500]/70 transition px-3 py-2.5 group">' +
+    const readHref = 'read.html?id=' + b.id + '&u=' + encodeURIComponent(b.url || '') + '&t=' + encodeURIComponent(b.title || '');
+    return '<div class="card relative block rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] hover:border-[#ff9500]/70 dark:hover:border-[#ff9500]/70 transition px-3 py-2.5 group cursor-pointer" data-read="' + readHref.replace(/"/g, '&quot;') + '">' +
       '<div class="flex items-start justify-between gap-2">' +
-        '<h3 class="font-medium text-[14px] leading-snug text-gray-800 dark:text-gray-100 group-hover:text-[#ff9500] dark:group-hover:text-[#ffb84d] truncate">' + b.title + '</h3>' +
+        '<h3 class="font-medium text-[14px] leading-snug text-gray-800 dark:text-gray-100 truncate min-w-0"><a href="' + readHref + '" class="hover:text-[#ff9500] dark:hover:text-[#ffb84d]">' + b.title + '</a></h3>' +
         '<div class="flex items-center gap-1.5 shrink-0">' +
           '<button class="fav-btn w-6 h-6 rounded-full flex items-center justify-center text-xs ' + (fav ? 'bg-rose-500 text-white' : 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-400 hover:text-rose-400') + '" data-id="' + b.id + '" title="收藏">♥</button>' +
           '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white ' + info.cls + '">' + info.label + '</span>' +
@@ -346,11 +348,12 @@
         '<span class="flex items-center gap-1 shrink-0">🕐 ' + fakeDate(b.id) + '</span>' +
         '<span class="flex items-center gap-1 shrink-0">👁 ' + fakeViews(b.id) + '</span>' +
         '<span class="ml-auto shrink-0 flex items-center gap-0.5 select-none">' + stars + '</span>' +
+        '<a href="book/' + b.id + '" class="detail-link shrink-0 text-[#ff9500] hover:underline" title="' + (b.title || '').replace(/"/g, '&quot;') + ' 详情 / 章节目录" aria-label="查看 ' + (b.title || '').replace(/"/g, '&quot;') + ' 详情">详情›</a>' +
       '</div>' +
-    '</a>';
+    '</div>';
   }
 
-  // 事件委托：收藏 / 评分
+  // 事件委托：收藏 / 评分 / 卡片空白点击阅读（详情链接与标题链接走各自 href）
   document.addEventListener('click', function (e) {
     const fb = e.target.closest('.fav-btn');
     if (fb) { e.preventDefault(); e.stopPropagation(); toggleFav(fb.dataset.id); rerender(); return; }
@@ -362,6 +365,11 @@
       rerender();
       return;
     }
+    // 「详情」链接 / 标题链接交给各自 <a href>（详情页 / 阅读页），不触发下面的整卡跳转
+    if (e.target.closest('a')) return;
+    // 点击卡片空白处 → 进入阅读（保留原「整卡可点」体验）
+    const card = e.target.closest('.card');
+    if (card && card.dataset.read) { window.location.href = card.dataset.read; }
   });
 
   // ---------- 分类（左侧侧栏：图片左侧模式 + 数量；移动端横滑同步） ----------
