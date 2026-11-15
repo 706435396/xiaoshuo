@@ -94,8 +94,14 @@
   <iframe id="pdfFrame" class="hidden flex-1 w-full border-0 bg-white"></iframe>
 
   <!-- txt 阅读容器 -->
-  <div id="txtWrap" class="hidden flex-1 overflow-hidden bg-white dark:bg-[#121212]">
-    <div id="txtContent" class="mx-auto max-w-[760px] h-full overflow-y-auto px-6 py-8" style="font-size:17px;line-height:1.9"></div>
+  <div id="txtWrap" class="hidden flex-1 relative overflow-hidden bg-white dark:bg-[#121212]">
+    <div id="txtContent" class="mx-auto max-w-[760px] h-full overflow-y-auto px-6 py-8 pb-16" style="font-size:17px;line-height:1.9"></div>
+    <!-- 底部章节导航条 -->
+    <div id="txtNav" class="hidden absolute bottom-0 left-0 right-0 flex items-center justify-between gap-2 px-4 py-2 bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur border-t border-gray-200 dark:border-gray-800">
+      <button id="chapPrev" class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] text-sm hover:bg-gray-200 dark:hover:bg-[#333] disabled:opacity-40 transition">‹ 上一章</button>
+      <span id="chapInfo" class="text-xs text-gray-500 dark:text-gray-400 truncate flex-1 text-center"></span>
+      <button id="chapNext" class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] text-sm hover:bg-gray-200 dark:hover:bg-[#333] disabled:opacity-40 transition">下一章 ›</button>
+    </div>
   </div>
 
 <script>
@@ -248,24 +254,40 @@
 
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
+  const presetUrl = params.get('u');   // 从首页带过来的 R2 key，可免下载 books.json
+  const presetTitle = params.get('t');
 
   function showError(msg) {
     $('loading').classList.add('hidden');
     $('viewerWrap').classList.add('hidden');
     $('pdfFrame').classList.add('hidden');
+    $('txtWrap').classList.add('hidden');
     $('errorBox').classList.remove('hidden');
     $('errorBox').classList.add('flex');
     $('errorMsg').textContent = msg;
   }
 
-  if (!id) {
-    showError('缺少书籍 id 参数，请从首页点击书籍进入。');
+  if (!id && !presetUrl) {
+    showError('缺少书籍参数，请从首页点击书籍进入。');
     return;
   }
 
-  fetch('books.json').then(r => r.json()).then(books => {
-    const book = (Array.isArray(books) ? books : []).find(b => String(b.id) === String(id));
-    if (!book) { showError('未找到该书籍（id 不存在或 books.json 未包含）。'); return; }
+  // 取书籍信息：带 u 参数则免下载 books.json 直接读；否则回退查 books.json
+  function getBook() {
+    return new Promise((resolve, reject) => {
+      if (presetUrl) {
+        const m = (presetUrl.split('?')[0].match(/\.([A-Za-z0-9]+)$/) || [])[1] || '';
+        resolve({ id: id || '', title: presetTitle || '阅读器', url: presetUrl, type: m.toLowerCase() });
+        return;
+      }
+      fetch('books.json').then(r => r.json()).then(books => {
+        const book = (Array.isArray(books) ? books : []).find(b => String(b.id) === String(id));
+        if (book) resolve(book); else reject(new Error('notfound'));
+      }).catch(reject);
+    });
+  }
+
+  getBook().then(book => {
 
     $('bookTitle').textContent = book.title || '阅读器';
     // 类型角标（与首页卡片一致：TXT 蓝 / EPUB 紫 / PDF 红）
@@ -299,9 +321,10 @@
     $('importFile').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importBackup(f); e.target.value = ''; });
     refreshFav(); renderRateStars();
 
-    // ---------- TXT 阅读器 ----------
+    // ---------- TXT 阅读器（逐章阅读） ----------
     function initTxtReader(book) {
       const wrap = $('txtContent');
+      const nav = $('txtNav'), info = $('chapInfo');
       const bgModes = [
         { name: '默认', bg: '#ffffff', fg: '#222222' },
         { name: '羊皮纸', bg: '#f8f1e3', fg: '#5b4a3a' },
@@ -310,7 +333,11 @@
       ];
       let bgIndex = 0, fontSize = 17;
       const progressKey = 'ebook_progress_' + id;
-      let savedPct = parseFloat(localStorage.getItem(progressKey) || '0') || 0;
+      let chapters = [], chapterStart = [], chapterLen = [], totalChars = 0;
+      let curChapter = 0;
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(progressKey) || 'null'); } catch (e) {}
+      if (saved && typeof saved.c === 'number') curChapter = saved.c;
 
       function applyTheme() {
         const m = bgModes[bgIndex];
@@ -330,77 +357,114 @@
       const CHAPTER_RE = /^\s*(第\s*[0-9零一二三四五六七八九十百千万两]+\s*[章卷回部篇节集]|[Cc]hapter\s+\d+|序章|序言|前言|引言|后记|尾声|楔子|番外)\b/;
       function splitChapters(text) {
         const lines = text.split(/\r?\n/);
-        const chapters = [];
+        const res = [];
         let cur = null;
         for (const line of lines) {
           if (CHAPTER_RE.test(line)) {
-            if (cur) chapters.push(cur);
-            cur = { title: (line.trim().slice(0, 40)) || ('第' + (chapters.length + 1) + '节'), paras: [] };
+            if (cur) res.push(cur);
+            cur = { title: (line.trim().slice(0, 40)) || ('第' + (res.length + 1) + '节'), paras: [] };
           } else {
             if (!cur) cur = { title: '正文', paras: [] };
             if (line.trim()) cur.paras.push(line.trim());
           }
         }
-        if (cur) chapters.push(cur);
-        if (!chapters.length) chapters.push({ title: '全文', paras: lines.filter(l => l.trim()) });
-        return chapters;
+        if (cur) res.push(cur);
+        if (!res.length) res.push({ title: '全文', paras: lines.filter(l => l.trim()) });
+        return res;
       }
 
       function esc(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
 
-      function render(text) {
-        const chapters = splitChapters(text);
-        const html = chapters.map((c, i) =>
-          '<section id="chap-' + i + '" data-chapter="' + i + '">' +
-          '<h2 style="font-size:1.2em;font-weight:600;margin:.9em 0 .5em;border-bottom:1px solid rgba(128,128,128,.2);padding-bottom:.3em">' + esc(c.title) + '</h2>' +
-          c.paras.map(p => '<p style="margin:0 0 1em;text-indent:2em;line-height:1.9">' + esc(p) + '</p>').join('') +
-          '</section>'
-        ).join('');
-        wrap.innerHTML = html;
-        const sel = $('tocSelect');
-        sel.innerHTML = '<option value="">目录</option>' + chapters.map((c, i) => '<option value="' + i + '">' + esc(c.title.slice(0, 30)) + '</option>').join('');
-        sel.onchange = () => { const i = +sel.value; if (i >= 0) { const el = $('chap-' + i); if (el) el.scrollIntoView({ behavior: 'smooth' }); } };
+      // 单次只渲染当前章节 → DOM 极小，首屏飞快
+      function renderChapter(i) {
+        if (i < 0) i = 0;
+        if (i >= chapters.length) i = chapters.length - 1;
+        curChapter = i;
+        const c = chapters[i];
+        wrap.innerHTML =
+          '<h2 style="font-size:1.2em;font-weight:600;margin:.2em 0 1em;border-bottom:1px solid rgba(128,128,128,.2);padding-bottom:.4em">' + esc(c.title) + '</h2>' +
+          (c.paras.length ? c.paras.map(p => '<p style="margin:0 0 1em;text-indent:2em;line-height:1.9">' + esc(p) + '</p>').join('') : '<p style="color:#999">（本章暂无正文）</p>');
+        wrap.scrollTop = 0;
+        if (info) info.textContent = '第 ' + (i + 1) + ' / ' + chapters.length + ' 章';
+        if (nav) nav.classList.remove('hidden');
+        if ($('chapPrev')) $('chapPrev').disabled = (i === 0);
+        if ($('chapNext')) $('chapNext').disabled = (i === chapters.length - 1);
+        const sel = $('tocSelect'); if (sel) sel.value = String(i);
         applyTheme(); applyFont();
-        requestAnimationFrame(() => {
-          const max = wrap.scrollHeight - wrap.clientHeight;
-          if (max > 0 && savedPct > 0) wrap.scrollTop = Math.round(savedPct * max);
+        // 同一章的恢复滚动位置
+        if (saved && saved.c === i && saved.t) {
+          requestAnimationFrame(() => { wrap.scrollTop = saved.t; saved = null; updateTxtProgress(); });
+        } else {
           updateTxtProgress();
-        });
+        }
       }
 
-      function updateTxtProgress() {
+      function withinFrac() {
         const max = wrap.scrollHeight - wrap.clientHeight;
-        const pct = max > 0 ? wrap.scrollTop / max : 0;
+        return max > 0 ? wrap.scrollTop / max : 0;
+      }
+      function updateTxtProgress() {
+        const readChars = (chapterStart[curChapter] || 0) + (chapterLen[curChapter] || 0) * withinFrac();
+        const pct = totalChars ? readChars / totalChars : 0;
         const el = $('progressText');
         el.classList.remove('hidden');
-        el.textContent = '已读 ' + Math.round(pct * 100) + '%';
+        el.textContent = '第 ' + (curChapter + 1) + '/' + chapters.length + ' 章 · 已读 ' + Math.round(pct * 100) + '%';
       }
-
-      let savedTimer = null;
-      function saveTxtProgress() {
-        const max = wrap.scrollHeight - wrap.clientHeight;
-        const pct = max > 0 ? wrap.scrollTop / max : 0;
-        try { localStorage.setItem(progressKey, pct.toFixed(4)); } catch (e) {}
-        syncPush();
+      function saveTxtProgress(immediate) {
+        try { localStorage.setItem(progressKey, JSON.stringify({ c: curChapter, t: wrap.scrollTop })); } catch (e) {}
+        if (immediate) syncPush(); else { clearTimeout(saveTimer); saveTimer = setTimeout(syncPush, 400); }
       }
+      let saveTimer = null;
       wrap.addEventListener('scroll', () => {
         updateTxtProgress();
-        clearTimeout(savedTimer);
-        savedTimer = setTimeout(saveTxtProgress, 400);
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => saveTxtProgress(false), 400);
       }, { passive: true });
 
-      // 控件复用：翻页=整屏滚动，字体 +-，背景切换
-      $('prevBtn').onclick = () => wrap.scrollBy({ top: -wrap.clientHeight * 0.9, behavior: 'smooth' });
-      $('nextBtn').onclick = () => wrap.scrollBy({ top: wrap.clientHeight * 0.9, behavior: 'smooth' });
+      function gotoChapter(i) {
+        if (i < 0 || i >= chapters.length) return;
+        saveTxtProgress(true);
+        renderChapter(i);
+      }
+
+      // 控件：顶部 ‹ › 与底部导航 = 上一章 / 下一章
+      $('prevBtn').title = '上一章';
+      $('nextBtn').title = '下一章';
+      $('prevBtn').onclick = () => gotoChapter(curChapter - 1);
+      $('nextBtn').onclick = () => gotoChapter(curChapter + 1);
+      if ($('chapPrev')) $('chapPrev').onclick = () => gotoChapter(curChapter - 1);
+      if ($('chapNext')) $('chapNext').onclick = () => gotoChapter(curChapter + 1);
       $('fontDec').onclick = () => { fontSize = Math.max(13, fontSize - 1); applyFont(); };
       $('fontInc').onclick = () => { fontSize = Math.min(30, fontSize + 1); applyFont(); };
       $('bgToggle').textContent = bgModes[0].name;
       $('bgToggle').onclick = () => { bgIndex = (bgIndex + 1) % bgModes.length; applyTheme(); };
 
+      // 目录下拉：跳章
+      const sel = $('tocSelect');
+      sel.onchange = () => { const i = +sel.value; if (i >= 0) gotoChapter(i); };
+
+      // 键盘 ← → 翻章（↑↓ 仍用于章节内滚动）
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') gotoChapter(curChapter - 1);
+        else if (e.key === 'ArrowRight') gotoChapter(curChapter + 1);
+      });
+
       fetch(resolveUrl(book.url)).then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.arrayBuffer();
-      }).then(buf => render(decode(buf))).catch(err => {
+      }).then(buf => {
+        const text = decode(buf);
+        chapters = splitChapters(text);
+        chapterStart = []; chapterLen = []; totalChars = 0;
+        for (const c of chapters) {
+          chapterStart.push(totalChars);
+          const len = c.title.length + c.paras.reduce((a, p) => a + p.length, 0);
+          chapterLen.push(len);
+          totalChars += len;
+        }
+        sel.innerHTML = '<option value="">目录</option>' + chapters.map((c, i) => '<option value="' + i + '">' + esc(c.title.slice(0, 30)) + '</option>').join('');
+        renderChapter(curChapter);
+      }).catch(err => {
         showError('TXT 加载失败：' + err.message + '（请确认链接有效且 R2 已开启 CORS）');
       });
     }
@@ -506,7 +570,7 @@
 
     window.addEventListener('resize', () => rendition.resize());
   }).catch(err => {
-    showError('books.json 加载失败，请通过本地服务器预览（见 README）。');
+    showError(err && err.message === 'notfound' ? '未找到该书籍（id 不存在或 books.json 未包含）。' : 'books.json 加载失败，请通过本地服务器预览（见 README）。');
   });
 })();
 </script>
