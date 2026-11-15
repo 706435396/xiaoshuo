@@ -3,7 +3,7 @@
 // 用 Cache API 缓存 books.json 与 R2 原文，避免每章请求重复下载整本。
 
 const R2_BASE = 'https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/';
-const SITE = 'https://xiaoshuo-5hn.pages.dev';
+const SITE = 'https://shenye.72tool.com';
 
 // 与 read.html 完全一致的章节正则
 const CHAPTER_RE = /^\s*(?:第\s*[0-9零一二三四五六七八九十百千万两]+\s*[章卷回部篇节集]|[Cc]hapter\s+\d+|序章|序言|前言|引言|后记|尾声|楔子|番外|[一二三四五六七八九十百千]+\s*[、﹑.．]|[（(][一二三四五六七八九十百千]+[)）]|\d+\s*[、.．])/;

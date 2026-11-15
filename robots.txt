@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://xiaoshuo-5hn.pages.dev/sitemap.xml
+Sitemap: https://shenye.72tool.com/sitemap.xml

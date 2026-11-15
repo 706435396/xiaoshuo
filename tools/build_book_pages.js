@@ -26,7 +26,7 @@ const CACHE_PATH = path.join(OUT_DIR, '_preview.json');
 const CHAPTERS_DIR = path.join(OUT_DIR, 'chapters');  // 每本一个 json，避免单文件超 512MB
 const CAT_DIR = path.join(ROOT, 'category');
 const SITEMAP_PATH = path.join(ROOT, 'sitemap.xml');
-const SITE = 'https://xiaoshuo-5hn.pages.dev';
+const SITE = 'https://shenye.72tool.com';
 const R2_BASE = 'https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/';
 
 const DO_FETCH = process.argv.includes('--fetch');
