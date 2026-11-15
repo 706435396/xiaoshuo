@@ -364,49 +364,76 @@
     }
   });
 
-  // ---------- 分类（左侧侧栏：图标左侧模式 + 数量；移动端横滑同步） ----------
-  // 固定分类体系（取自用户截图），顺序即展示顺序
+  // ---------- 分类（左侧侧栏：图片左侧模式 + 数量；移动端横滑同步） ----------
+  // 固定分类体系（取自用户截图），顺序即展示顺序（用于随机推荐下拉等）
   const FIXED_CATEGORIES = ['全部','都市激情','校园之恋','人妻熟女','家庭乱伦','经验故事','真实体验','猎奇另类','短篇笑话','古典武侠','91博客'];
-  // 每个分类左侧的小图标（彩色圆角方块 + emoji，轻量、无需外部图片）
-  const CAT_ICONS = {
-    '全部':     { e: '📚', c: '#6b7280' },
-    '都市激情': { e: '🌆', c: '#ff9500' },
-    '校园之恋': { e: '🎓', c: '#3b82f6' },
-    '人妻熟女': { e: '💃', c: '#ec4899' },
-    '家庭乱伦': { e: '🏠', c: '#8b5cf6' },
-    '经验故事': { e: '💡', c: '#f59e0b' },
-    '真实体验': { e: '📝', c: '#22c55e' },
-    '猎奇另类': { e: '🔮', c: '#7c3aed' },
-    '短篇笑话': { e: '😄', c: '#eab308' },
-    '古典武侠': { e: '⚔️', c: '#ef4444' },
-    '91博客':  { e: '✍️', c: '#14b8a6' },
+  // 每个分类对应的 R2 缩略图 slug（tools/gen_cat_covers.py 生成，已上传到 cat/ 前缀）
+  const CAT_IMG = {
+    '全部':'all','都市激情':'dushi','校园之恋':'xiaoyuan','人妻熟女':'renqi',
+    '家庭乱伦':'jiating','经验故事':'jingyan','真实体验':'zhenshi','猎奇另类':'lieqi',
+    '短篇笑话':'duanpian','古典武侠':'gudian','91博客':'blog91'
   };
-  function catIconHtml(name) {
-    const ic = CAT_ICONS[name] || { e: '📁', c: '#6b7280' };
-    return '<span class="inline-flex items-center justify-center w-6 h-6 rounded-md text-[13px] shrink-0" style="background:' + ic.c + '22;color:' + ic.c + '">' + ic.e + '</span>';
+  // 侧栏结构：都市激情 作为可展开父级，下面挂子分类（贴合截图）
+  const CAT_TREE = [
+    { name: '全部', type: 'all' },
+    { name: '都市激情', type: 'parent', children: ['校园之恋','人妻熟女','家庭乱伦','经验故事','真实体验','猎奇另类','短篇笑话','古典武侠','91博客'] }
+  ];
+  let catExpanded = true; // 默认展开，贴合截图
+
+  // 分类左侧小图（真实图片；加载失败时回退为带首字的色块）
+  function catImageHtml(name) {
+    const slug = CAT_IMG[name] || 'all';
+    const ch = (name || '?')[0];
+    return '<img src="' + resolveUrl('cat/' + slug + '.jpg') + '" alt="' + name + '" ' +
+      'loading="lazy" decoding="async" ' +
+      'class="w-7 h-7 rounded-md object-cover shrink-0" ' +
+      'onerror="this.onerror=null;var s=document.createElement(\'span\');s.className=\'inline-flex items-center justify-center w-7 h-7 rounded-md text-[12px] text-white shrink-0\';s.style.background=\'#ff950033\';s.textContent=\'' + ch + '\';this.replaceWith(s);" />';
   }
   function catCount(name) {
     if (name === '全部') return books.length;
     return books.filter(b => b.category === name).length;
   }
+  function catRow(name, isParent, expanded) {
+    const active = (name === activeCategory);
+    const right = isParent
+      ? '<span class="cat-chev ml-auto text-[10px] text-gray-400 transition-transform ' + (expanded ? 'rotate-90' : '') + '">▸</span>'
+      : '<span class="ml-auto text-[11px] opacity-60 shrink-0 tabular-nums">' + catCount(name) + '</span>';
+    return '<button data-cat="' + name + '" class="cat-btn flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-sm transition ' +
+      (active ? 'bg-[#ff9500] text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]') + '">' +
+      catImageHtml(name) +
+      '<span class="flex-1 truncate">' + name + '</span>' + right + '</button>';
+  }
+  function catChildRow(name) {
+    const active = (name === activeCategory);
+    return '<button data-cat="' + name + '" class="cat-btn flex items-center gap-2 w-full text-left pl-9 pr-2 py-1.5 rounded-lg text-[13px] transition ' +
+      (active ? 'bg-[#ff9500]/15 text-[#ff9500] dark:text-[#ffb84d]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#222]') + '">' +
+      catImageHtml(name) +
+      '<span class="flex-1 truncate">' + name + '</span>' +
+      '<span class="text-[11px] opacity-60 shrink-0 tabular-nums">' + catCount(name) + '</span></button>';
+  }
   function renderCategories() {
-    const listHtml = FIXED_CATEGORIES.map(c =>
-      '<button data-cat="' + c + '" class="cat-btn flex items-center gap-2 w-full text-left px-2.5 py-2 rounded-lg text-sm transition ' +
-      (c === activeCategory ? 'bg-[#ff9500] text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-gray-900 dark:hover:text-white') +
-      '">' + catIconHtml(c) +
-      '<span class="flex-1 truncate">' + c + '</span>' +
-      '<span class="text-[11px] opacity-60 shrink-0 tabular-nums">' + catCount(c) + '</span>' +
-      '</button>'
-    ).join('');
-    const barHtml = FIXED_CATEGORIES.map(c =>
-      '<button data-cat="' + c + '" class="cat-btn shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border whitespace-nowrap ' +
-      (c === activeCategory ? 'bg-[#ff9500] text-white border-[#ff9500]' : 'bg-white dark:bg-[#141414] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-[#333]') +
-      '">' + catIconHtml(c) + c + '</button>'
-    ).join('');
-    if ($('catList')) $('catList').innerHTML = listHtml;
-    if ($('catBar')) $('catBar').innerHTML = barHtml;
+    // 桌面侧栏：全部 + 都市激情（可展开父级）+ 子分类
+    let html = catRow('全部', false, false);
+    const parent = CAT_TREE[1];
+    html += catRow(parent.name, true, catExpanded);
+    if (catExpanded) parent.children.forEach(ch => { html += catChildRow(ch); });
+    const listEl = $('catList'); if (listEl) listEl.innerHTML = html;
+
+    // 移动端横滑：平铺全部分类（图片 + 名称）
+    const barEl = $('catBar');
+    if (barEl) barEl.innerHTML = FIXED_CATEGORIES.map(n => {
+      const active = (n === activeCategory);
+      return '<button data-cat="' + n + '" class="cat-btn shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-sm border whitespace-nowrap ' +
+        (active ? 'bg-[#ff9500] text-white border-[#ff9500]' : 'bg-white dark:bg-[#141414] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-[#333]') +
+        '">' + catImageHtml(n) + n + '</button>';
+    }).join('');
+
+    // 事件绑定
     document.querySelectorAll('.cat-btn').forEach(btn => {
       btn.addEventListener('click', () => { activeCategory = btn.dataset.cat; currentPage = 1; applyFilter(); });
+    });
+    document.querySelectorAll('.cat-chev').forEach(c => {
+      c.addEventListener('click', (e) => { e.stopPropagation(); catExpanded = !catExpanded; renderCategories(); });
     });
   }
 

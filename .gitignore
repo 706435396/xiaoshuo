@@ -3,6 +3,10 @@ covers/
 covers_upload.txt
 covers_upload_parallel.txt
 
+# 本地生成的分类缩略图（已上传 R2，不进仓库）
+cat/
+cat_upload.txt
+
 # R2 上传清单
 r2_urls.txt
 
