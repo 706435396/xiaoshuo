@@ -109,13 +109,13 @@ function bookPageHtml(book, preview) {
     '电子书。' + (intro || '提供在线阅读、章节目录与正文试读。')).slice(0, 160);
   const keywords = [title, author, category, '在线阅读', '小说', type].filter(Boolean).join(',');
 
-  const readUrl = '../read.html?id=' + encodeURIComponent(id) +
+  const readUrl = '../read?id=' + encodeURIComponent(id) +
     '&u=' + encodeURIComponent(book.url || '') +
     '&t=' + encodeURIComponent(title);
 
   // 同类推荐内链（真实 <a>，搜索引擎可爬）
   const rel = relatedBooks(book, 8).map(r =>
-    '<li><a href="./' + escAttr(String(r.id)) + '.html" class="rel-link">' +
+    '<li><a href="./' + escAttr(String(r.id)) + '" class="rel-link">' +
     esc(r.title) + '</a> <span class="rel-meta">· ' + esc(r.author || '') + ' · ' + esc(r.category || '') + '</span></li>'
   ).join('');
 
@@ -152,7 +152,7 @@ function bookPageHtml(book, preview) {
     genre: category,
     bookFormat: 'EBook',
     inLanguage: 'zh-CN',
-    url: SITE + '/book/' + id + '.html',
+    url: SITE + '/book/' + id,
     description: desc
   };
   if (preview && preview.chapterCount) jsonLd.numberOfPages = preview.chapterCount;
@@ -165,7 +165,7 @@ function bookPageHtml(book, preview) {
 <title>${esc(title)} - ${esc(author)} - 在线阅读 | 电子书库</title>
 <meta name="description" content="${escAttr(desc)}" />
 <meta name="keywords" content="${escAttr(keywords)}" />
-<link rel="canonical" href="${SITE}/book/${id}.html" />
+<link rel="canonical" href="${SITE}/book/${id}" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>
   :root{ --bg:#0d0d0d; --card:#161616; --fg:#e5e5e5; --muted:#9a9a9a; --orange:#ff9500; --line:#262626; }
@@ -198,7 +198,7 @@ function bookPageHtml(book, preview) {
 </head>
 <body>
 <div class="wrap">
-  <div class="crumb"><a href="../index.html">电子书库</a> &gt; <a href="../index.html">${esc(category)}</a> &gt; <span>${esc(title)}</span></div>
+  <div class="crumb"><a href="../">电子书库</a> &gt; <a href="../">${esc(category)}</a> &gt; <span>${esc(title)}</span></div>
 
   <h1>${esc(title)}</h1>
   <div class="sub">
@@ -223,7 +223,7 @@ function bookPageHtml(book, preview) {
     <ul class="rel-list">${rel}</ul>
   </section>
 
-  <div class="foot"><a href="../index.html">返回电子书库首页</a> · 共 ${books.length} 本在线书库</div>
+  <div class="foot"><a href="../">返回电子书库首页</a> · 共 ${books.length} 本在线书库</div>
 </div>
 </body>
 </html>`;
@@ -247,10 +247,10 @@ function generatePages(previewMap) {
 function writeSitemap() {
   const urls = [];
   urls.push({ loc: SITE + '/', priority: '1.0', freq: 'weekly' });
-  urls.push({ loc: SITE + '/read.html', priority: '0.8', freq: 'weekly' });
+  urls.push({ loc: SITE + '/read', priority: '0.8', freq: 'weekly' });
   urls.push({ loc: SITE + '/404.html', priority: '0.3', freq: 'yearly' });
   for (const b of books) {
-    urls.push({ loc: SITE + '/book/' + String(b.id) + '.html', priority: '0.6', freq: 'weekly' });
+    urls.push({ loc: SITE + '/book/' + String(b.id), priority: '0.6', freq: 'weekly' });
   }
   const body = urls.map(u =>
     '  <url>\n    <loc>' + u.loc + '</loc>\n    <changefreq>' + u.freq + '</changefreq>\n    <priority>' + u.priority + '</priority>\n  </url>'
