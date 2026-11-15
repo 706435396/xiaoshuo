@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>内容举报与审核入口 - 深夜文库</title>
+<meta name="description" content="深夜文库内容举报与审核通道：举报侵权、违法违规、未成年相关或其他不良内容，我们承诺及时受理与处理。" />
+<meta name="rating" content="adult" />
+<link rel="canonical" href="https://xiaoshuo-5hn.pages.dev/report" />
+<style>
+  :root{--bg:#0d0d0d;--card:#161616;--fg:#e5e5e5;--muted:#9a9a9a;--orange:#ff9500;--line:#262626}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.9}
+  a{color:var(--orange);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+  h1{font-size:24px;color:#fff;margin:0 0 6px}.lead{color:var(--muted);font-size:14px;margin:0 0 22px}
+  .block{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin:16px 0}
+  h2{font-size:17px;color:#fff;border-left:3px solid var(--orange);padding-left:10px;margin:0 0 12px}
+  p,li{font-size:14px;color:#cfcfcf}ul{padding-left:20px}label{display:block;font-size:14px;color:#cfcfcf;margin:12px 0 6px}
+  input,select,textarea{width:100%;background:#0f0f0f;border:1px solid #333;color:#e5e5e5;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit}
+  textarea{min-height:110px;resize:vertical}
+  button{background:var(--orange);color:#111;font-weight:700;border:0;border-radius:9px;padding:12px 26px;font-size:15px;cursor:pointer;margin-top:14px}
+  .tip{font-size:12px;color:var(--muted)}.ok{color:#6ee7a0;font-size:14px;display:none}
+  .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:28px;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="font-size:13px;color:var(--muted);margin-bottom:16px"><a href="/">深夜文库</a> &gt; 内容举报与审核</div>
+  <h1>内容举报与审核入口</h1>
+  <p class="lead">每一个夜晚，都有一个值得读完的故事。为此我们坚持干净、合规的内容环境。若你发现下列内容，请通过本页或邮件举报，我们承诺在收到后尽快核实处理。</p>
+
+  <section class="block">
+    <h2>可举报的内容类型</h2>
+    <ul>
+      <li>涉及未成年人的任何不当内容（一经发现立即下架并永久封禁来源）</li>
+      <li>非自愿、偷拍、私密影像等侵犯他人权益的内容</li>
+      <li>侵犯著作权、未经授权转载的作品</li>
+      <li>违法违规、诈骗、广告引流等内容</li>
+      <li>其他违反本站内容规范的信息</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2>在线举报表单</h2>
+    <form id="reportForm" onsubmit="return false;">
+      <label for="rtype">举报类型</label>
+      <select id="rtype" required>
+        <option value="">请选择…</option>
+        <option>未成年人相关</option>
+        <option>非自愿/侵犯隐私</option>
+        <option>侵权/盗版</option>
+        <option>违法违规</option>
+        <option>广告/诈骗引流</option>
+        <option>其他</option>
+      </select>
+      <label for="rurl">内容链接（书名页或章节 URL）</label>
+      <input id="rurl" type="text" placeholder="https://xiaoshuo-5hn.pages.dev/book/123" />
+      <label for="rdesc">问题描述</label>
+      <textarea id="rdesc" placeholder="请尽量详细描述，便于我们快速核实"></textarea>
+      <label for="rmail">你的邮箱（选填，便于回复处理结果）</label>
+      <input id="rmail" type="email" placeholder="you@example.com" />
+      <button type="button" id="rsubmit">提交举报</button>
+      <span class="ok" id="rok">✓ 已记录你的举报，我们会尽快核实处理。</span>
+      <p class="tip">说明：本站为静态演示站点，表单仅在本地记录，不会上传服务器。正式运营时请将提交接入后端工单系统或替换为下方举报邮箱。</p>
+    </form>
+  </section>
+
+  <section class="block">
+    <h2>其他举报渠道</h2>
+    <p>举报邮箱：<a href="mailto:report@example.com">report@example.com</a>（请替换为实际邮箱）</p>
+    <p>我们承诺：对每一条有效举报在 3 个工作日内核实并反馈；对确认违规的内容立即下架，对违规来源永久封禁。</p>
+  </section>
+
+  <div class="foot">
+    <a href="/">返回首页</a> · <a href="/privacy">隐私政策</a> · <a href="/dmca">版权投诉</a><br />
+    深夜文库 · 仅面向成年读者
+  </div>
+</div>
+<script>
+  document.getElementById('rsubmit').addEventListener('click', function () {
+    var type = document.getElementById('rtype').value;
+    var desc = document.getElementById('rdesc').value.trim();
+    if (!type || !desc) { alert('请填写举报类型和问题描述'); return; }
+    try {
+      var arr = JSON.parse(localStorage.getItem('sy_reports') || '[]');
+      arr.push({ t: Date.now(), type: type, url: document.getElementById('rurl').value, desc: desc, mail: document.getElementById('rmail').value });
+      localStorage.setItem('sy_reports', JSON.stringify(arr.slice(-200)));
+    } catch (e) {}
+    document.getElementById('rok').style.display = 'inline';
+  });
+</script>
+<script src="/agegate.js" defer></script>
+</body>
+</html>
