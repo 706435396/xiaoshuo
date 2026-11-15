@@ -1,20 +1,22 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="">
+<html lang="zh-CN" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>电子书库 · 在线阅读</title>
   <meta name="description" content="极简电子书索引站，支持 epub / pdf / txt 在线阅读，txt 自动切章、进度记忆、收藏评分。" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%234b5563'/%3E%3Crect%20x='9'%20y='8'%20width='3'%20height='16'%20rx='1'%20fill='white'/%3E%3Crect%20x='14'%20y='8'%20width='9'%20height='16'%20rx='1'%20fill='white'%20opacity='.85'/%3E%3C/svg%3E" />
-  <!-- 主题初始化：避免刷新闪烁 -->
+  <!-- 主题初始化：默认深色（贴合截图风格），已保存的浅色偏好优先 -->
   <script>
     (function () {
       try {
         var t = localStorage.getItem('theme');
-        if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (t === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
           document.documentElement.classList.add('dark');
         }
-      } catch (e) {}
+      } catch (e) { document.documentElement.classList.add('dark'); }
     })();
   </script>
   <!-- Tailwind CSS v3（CDN 引入） -->
@@ -26,107 +28,123 @@
     .dark .card-shadow { box-shadow: 0 4px 16px rgba(0,0,0,.4); }
     .spinner { border: 3px solid rgba(120,120,120,.25); border-top-color: #6b7280; border-radius: 50%; width: 28px; height: 28px; animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* 隐藏滚动条但可滚动（移动端分类横滑） */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-[#121212] dark:text-gray-200 transition-colors min-h-screen">
+<body class="bg-gray-50 text-gray-800 dark:bg-[#000] dark:text-gray-200 transition-colors min-h-screen">
+
   <!-- 顶部导航栏 -->
-  <header class="sticky top-0 z-10 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
-    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center gap-3">
-      <a href="index.html" class="font-semibold text-lg shrink-0">📚 电子书库</a>
-      <div class="flex-1 max-w-md mx-auto">
+  <header class="sticky top-0 z-20 bg-white/90 dark:bg-[#0d0d0d]/90 backdrop-blur border-b border-gray-200 dark:border-[#262626]">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center gap-3">
+      <a href="index.html" class="font-semibold text-lg shrink-0 text-gray-800 dark:text-gray-100">📚 电子书库</a>
+      <div class="flex-1 max-w-xl mx-auto">
         <input id="search" type="search" placeholder="搜索书名 / 作者 / 分类"
-          class="w-full px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] border border-transparent focus:border-gray-300 dark:focus:border-gray-600 outline-none text-sm" />
+          class="w-full px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] border border-transparent dark:border-[#333] focus:border-gray-300 dark:focus:border-orange-500 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400" />
       </div>
       <button id="authBtn" title="登录 / 注册"
-        class="shrink-0 px-3 h-9 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] flex items-center justify-center text-sm hover:bg-gray-200 dark:hover:bg-[#333] transition">登录</button>
+        class="shrink-0 px-3 h-9 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] dark:border dark:border-[#333] flex items-center justify-center text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#222] transition">登录</button>
       <button id="themeToggle" title="切换主题"
-        class="shrink-0 w-9 h-9 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#333] transition">
-        <span id="themeIcon">🌙</span>
+        class="shrink-0 w-9 h-9 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] dark:border dark:border-[#333] flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#222] transition">
+        <span id="themeIcon">☀️</span>
       </button>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-6 lg:pr-[15rem]">
-    <!-- 移动端：我的书架（可折叠，lg 以上隐藏，桌面改用右侧侧栏） -->
-    <section id="mobileShelf" class="lg:hidden mb-6 card-shadow rounded-xl bg-white dark:bg-[#1a1a1a] p-4">
-      <button id="shelfToggle" class="flex items-center justify-between w-full text-left">
-        <span class="text-base font-medium">我的书架</span>
-        <span id="shelfArrow" class="text-gray-400 transition-transform">▸</span>
-      </button>
-      <div id="shelfBody" class="hidden mt-3 space-y-3"></div>
-    </section>
+  <main class="max-w-7xl mx-auto px-4 py-6 flex items-start gap-6">
 
-    <!-- 随机推荐区块 -->
-    <section id="randomSection" class="mb-8">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-medium">随机推荐</h2>
-        <div class="flex items-center gap-2 flex-wrap">
-          <select id="randomCat" class="text-sm px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 outline-none max-w-[120px]"></select>
-          <button id="excludeReadBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">排除已读</button>
-          <button id="ratingFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">评分优先</button>
-          <button id="favFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">收藏优先</button>
-          <button id="unratedBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">只看未评分</button>
-          <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
+    <!-- 左侧：分类侧栏（桌面） -->
+    <aside class="hidden lg:block w-48 shrink-0 sticky top-20">
+      <div class="rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-3">
+        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 px-1">分类</h3>
+        <div id="catList" class="space-y-1"></div>
+      </div>
+    </aside>
+
+    <!-- 中间：主内容 -->
+    <div class="flex-1 min-w-0">
+
+      <!-- 移动端：分类横向滚动 -->
+      <div id="catBar" class="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-1"></div>
+
+      <!-- Tabs：最新 / 精华 / 热门 -->
+      <div class="flex gap-1 mb-5 border-b border-gray-200 dark:border-[#262626]">
+        <button id="sortLatest" class="tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-orange-500 text-orange-500 dark:text-orange-400">最新</button>
+        <button id="sortBest" class="tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">精华</button>
+        <button id="sortHot" class="tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">热门</button>
+        <button id="sortFav" class="hidden"></button>
+      </div>
+
+      <!-- 移动端：我的书架（可折叠，lg 以上改用右侧侧栏） -->
+      <section id="mobileShelf" class="lg:hidden mb-6 card-shadow rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-4">
+        <button id="shelfToggle" class="flex items-center justify-between w-full text-left">
+          <span class="text-base font-medium text-gray-800 dark:text-gray-100">我的书架</span>
+          <span id="shelfArrow" class="text-gray-400 transition-transform">▸</span>
+        </button>
+        <div id="shelfBody" class="hidden mt-3 space-y-3"></div>
+      </section>
+
+      <!-- 随机推荐区块 -->
+      <section id="randomSection" class="mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-medium text-gray-800 dark:text-gray-100">随机推荐</h2>
+          <div class="flex items-center gap-2 flex-wrap">
+            <select id="randomCat" class="text-sm px-2 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 outline-none max-w-[120px]"></select>
+            <button id="excludeReadBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">排除已读</button>
+            <button id="ratingFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">评分优先</button>
+            <button id="favFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">收藏优先</button>
+            <button id="unratedBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">只看未评分</button>
+            <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
+          </div>
         </div>
+        <div id="randomGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </section>
+
+      <!-- 加载提示 -->
+      <div id="loading" class="flex flex-col items-center justify-center py-20 text-gray-400">
+        <div class="spinner mb-3"></div><span class="text-sm">加载中…</span>
       </div>
-      <div id="randomGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-    </section>
 
-    <!-- 排序 / 筛选栏 -->
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-base font-medium">全部书籍</h2>
-      <div class="flex gap-2 text-sm">
-        <button id="sortLatest" class="sort-btn px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900">最新</button>
-        <button id="sortHot" class="sort-btn px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white text-gray-600 dark:bg-[#1a1a1a] dark:text-gray-300">热门</button>
-        <button id="sortFav" class="sort-btn px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white text-gray-600 dark:bg-[#1a1a1a] dark:text-gray-300">收藏</button>
+      <!-- 书籍列表（纯文字卡片，无封面） -->
+      <div id="bookGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+
+      <!-- 空状态 -->
+      <div id="empty" class="hidden flex-col items-center justify-center py-20 text-gray-400">
+        <div class="text-4xl mb-3">🔍</div><p class="text-sm">没有找到匹配的书籍</p>
       </div>
-    </div>
-    <!-- 分类标签筛选栏 -->
-    <div id="categories" class="flex flex-wrap gap-2 mb-6"></div>
 
-    <!-- 加载提示 -->
-    <div id="loading" class="flex flex-col items-center justify-center py-20 text-gray-400">
-      <div class="spinner mb-3"></div><span class="text-sm">加载中…</span>
+      <!-- 分页 -->
+      <div id="pagination" class="hidden flex flex-wrap justify-center items-center gap-2 mt-8"></div>
     </div>
 
-    <!-- 书籍卡片网格 -->
-    <div id="bookGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-
-    <!-- 空状态 -->
-    <div id="empty" class="hidden flex-col items-center justify-center py-20 text-gray-400">
-      <div class="text-4xl mb-3">🔍</div><p class="text-sm">没有找到匹配的书籍</p>
-    </div>
-
-    <!-- 分页 -->
-    <div id="pagination" class="hidden flex flex-wrap justify-center items-center gap-2 mt-8"></div>
+    <!-- 右侧：我的书架侧栏（桌面） -->
+    <aside id="deskShelf" class="hidden lg:block w-56 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto card-shadow rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-4">
+      <h3 class="text-sm font-medium mb-3 text-gray-800 dark:text-gray-100">我的书架</h3>
+      <div id="deskShelfBody" class="space-y-4 text-sm"></div>
+    </aside>
   </main>
 
-  <footer class="max-w-6xl mx-auto px-4 py-8 text-center text-xs text-gray-400 lg:pr-[15rem]">
+  <footer class="max-w-7xl mx-auto px-4 py-8 text-center text-xs text-gray-400 lg:pr-[15rem]">
     <p>本站仅作书籍索引，电子书文件存储于外部链接。请仅上传拥有版权的作品。</p>
     <p class="mt-2">本机访问 <span id="visitCount">0</span> 次</p>
   </footer>
 
-  <!-- 桌面：我的书架侧栏（固定右侧，lg 以上显示；移动端改用顶部折叠区块） -->
-  <aside id="deskShelf" class="hidden lg:block fixed top-20 right-3 w-56 max-h-[calc(100vh-6rem)] overflow-y-auto card-shadow rounded-xl bg-white dark:bg-[#1a1a1a] p-4 z-10">
-    <h3 class="text-sm font-medium mb-3">我的书架</h3>
-    <div id="deskShelfBody" class="space-y-4 text-sm"></div>
-  </aside>
-
   <!-- 登录 / 注册 模态框 -->
   <div id="authModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-    <div class="w-full max-w-sm card-shadow rounded-xl bg-white dark:bg-[#1a1a1a] p-6">
+    <div class="w-full max-w-sm card-shadow rounded-xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#262626] p-6">
       <div class="flex items-center justify-between mb-4">
-        <h3 id="authTitle" class="text-base font-medium">登录</h3>
+        <h3 id="authTitle" class="text-base font-medium text-gray-800 dark:text-gray-100">登录</h3>
         <button id="authClose" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg leading-none">✕</button>
       </div>
       <div class="flex gap-2 mb-4 text-sm">
-        <button id="tabLogin" class="auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900">登录</button>
-        <button id="tabReg" class="auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300">注册</button>
+        <button id="tabLogin" class="auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-[#333] bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900">登录</button>
+        <button id="tabReg" class="auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300">注册</button>
       </div>
       <input id="authUser" type="text" placeholder="用户名（中英文/数字，1-32）" autocomplete="username"
-        class="w-full px-3 py-2 mb-3 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] border border-transparent focus:border-gray-300 dark:focus:border-gray-600 outline-none text-sm" />
+        class="w-full px-3 py-2 mb-3 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] border border-transparent focus:border-gray-300 dark:focus:border-gray-600 outline-none text-sm text-gray-800 dark:text-gray-100" />
       <input id="authPwd" type="password" placeholder="密码（至少6位）" autocomplete="current-password"
-        class="w-full px-3 py-2 mb-3 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] border border-transparent focus:border-gray-300 dark:focus:border-gray-600 outline-none text-sm" />
+        class="w-full px-3 py-2 mb-3 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] border border-transparent focus:border-gray-300 dark:focus:border-gray-600 outline-none text-sm text-gray-800 dark:text-gray-100" />
       <p id="authMsg" class="text-xs text-red-500 min-h-[1rem] mb-2"></p>
       <button id="authSubmit" class="w-full py-2 rounded-lg bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 text-sm hover:opacity-90 transition">登录</button>
       <p class="text-xs text-gray-400 mt-3 text-center">登录后收藏 / 评分 / 阅读进度将云端同步，可跨设备。</p>
@@ -136,7 +154,7 @@
 <script>
 (function () {
   const PER_PAGE = 12;
-  // R2 公共域名前缀：books.json 中 url/cover 只存路径(key)，运行时拼回完整直链，省体积
+  // R2 公共域名前缀（首页已改为纯文字列表，不再使用封面；read.html 仍会用到）
   const R2_BASE = 'https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/';
   const resolveUrl = (v) => (v ? R2_BASE + v : '');
   let books = [];
@@ -145,13 +163,13 @@
   let searchTerm = '';
   let currentPage = 1;
   let sortMode = 'latest';
-  let currentRandom = []; // 当前随机推荐选中的 id 列表
-  let randomCat = '全部';   // 随机推荐所选分类（全部=全局随机）
-  let excludeRead = false;  // 随机推荐是否排除已读
-  let ratingFirst = false; // 随机推荐是否评分优先
-  let favFirst = false;    // 随机推荐是否收藏优先
-  let unratedOnly = false; // 随机推荐是否只看未评分
-  let allCategories = [];   // 全部分类列表
+  let currentRandom = [];
+  let randomCat = '全部';
+  let excludeRead = false;
+  let ratingFirst = false;
+  let favFirst = false;
+  let unratedOnly = false;
+  let allCategories = [];
 
   const $ = (id) => document.getElementById(id);
 
@@ -169,7 +187,6 @@
       return { ok: res.ok, status: res.status, data };
     } catch (e) { return { ok: false, status: 0, data: { error: '网络错误' } }; }
   }
-  // 收集本地收藏/评分/进度，打包上传
   function collectLocal() {
     const favs = [...getFavs()];
     const ratings = {}, progress = {};
@@ -180,7 +197,6 @@
     }
     return { favs, ratings, progress };
   }
-  // 登录后拉取云端并合并（云端优先于本地冲突项）
   async function syncPull() {
     const r = await apiCall('/progress');
     if (r.status === 401) { logout(); return; }
@@ -226,8 +242,8 @@
     $('authSubmit').textContent = mode === 'login' ? '登录' : '注册';
     const on = 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900';
     const off = 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300';
-    $('tabLogin').className = 'auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 ' + (mode === 'login' ? on : off);
-    $('tabReg').className = 'auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 ' + (mode === 'reg' ? on : off);
+    $('tabLogin').className = 'auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-[#333] ' + (mode === 'login' ? on : off);
+    $('tabReg').className = 'auth-tab flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-[#333] ' + (mode === 'reg' ? on : off);
   }
   function openAuth(mode) { switchAuthTab(mode); $('authMsg').textContent = ''; $('authUser').value = ''; $('authPwd').value = ''; $('authModal').classList.remove('hidden'); setTimeout(() => $('authUser').focus(), 50); }
   function closeAuth() { $('authModal').classList.add('hidden'); }
@@ -275,18 +291,11 @@
   }
   $('themeToggle').addEventListener('click', function () {
     document.documentElement.classList.toggle('dark');
-    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    const isDark = document.documentElement.classList.contains('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
     updateThemeIcon();
   });
   updateThemeIcon();
-
-  // 封面加载失败时生成占位图
-  function coverFallback(img) {
-    img.onerror = null;
-    img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect width="300" height="400" fill="#e5e7eb"/><text x="50%" y="50%" font-size="20" fill="#9ca3af" text-anchor="middle" dominant-baseline="middle">无封面</text></svg>'
-    );
-  }
 
   // 类型角标：根据书籍 type 返回彩色标签（txt / epub / pdf）
   const TYPE_BADGE = {
@@ -294,40 +303,36 @@
     epub: { label: 'EPUB', cls: 'bg-purple-600' },
     pdf:  { label: 'PDF',  cls: 'bg-rose-600' },
   };
-  function typeBadge(type) {
-    const t = (type || '').toLowerCase();
-    const info = TYPE_BADGE[t] || { label: (type || '?').toUpperCase(), cls: 'bg-gray-600' };
-    return '<span class="absolute bottom-2 left-2 z-10 px-2 py-0.5 rounded text-[11px] font-semibold text-white ' + info.cls + ' shadow">' + info.label + '</span>';
-  }
 
-  // 单张卡片 HTML（含收藏按钮 + 星级评分），首页与随机推荐共用
+  // 单张卡片 HTML（纯文字，无封面；首页与随机推荐共用）
   function cardHtml(b) {
     const fav = isFav(b.id);
     const rating = getRating(b.id);
-    const resume = localStorage.getItem('ebook_progress_' + b.id);
     const stars = [1,2,3,4,5].map(v =>
       '<span class="star cursor-pointer ' + (v <= rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600') + '" data-id="' + b.id + '" data-val="' + v + '">★</span>'
     ).join('');
-    return '<a href="read.html?id=' + b.id + '" class="card-shadow relative block rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a] hover:-translate-y-0.5 transition">' +
-      (resume ? '<span class="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[11px] bg-emerald-600 text-white">续读</span>' : '') +
-      '<button class="fav-btn absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center text-sm ' + (fav ? 'bg-rose-500 text-white' : 'bg-black/30 text-white') + '" data-id="' + b.id + '" title="收藏">♥</button>' +
-      '<div class="relative">' +
-        '<img src="' + resolveUrl(b.cover) + '" onerror="coverFallback(this)" alt="' + b.title + '" class="w-full aspect-[3/4] object-cover bg-gray-100 dark:bg-[#222]" loading="lazy" decoding="async" />' +
-        typeBadge(b.type) +
-      '</div>' +
-      '<div class="p-3">' +
-        '<h3 class="font-medium text-sm line-clamp-1">' + b.title + '</h3>' +
-        '<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">' + (b.author || '未知作者') + '</p>' +
-        '<div class="flex items-center justify-between mt-2">' +
-          '<span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">' + (b.category || '未分类') + '</span>' +
-          '<span class="text-xs text-gray-400 select-none">' + stars + '</span>' +
+    const t = ((b.type || '').toLowerCase());
+    const info = TYPE_BADGE[t] || { label: (b.type || '?').toUpperCase(), cls: 'bg-gray-600' };
+    return '<a href="read.html?id=' + b.id + '" class="card relative block rounded-xl bg-white dark:bg-[#161616] border border-gray-200 dark:border-[#262626] hover:border-orange-500/60 dark:hover:border-orange-500/60 transition p-4 group">' +
+      '<div class="flex items-start justify-between gap-3">' +
+        '<h3 class="font-medium text-[15px] leading-snug text-gray-800 dark:text-gray-100 group-hover:text-orange-500 dark:group-hover:text-orange-400 line-clamp-2">' + b.title + '</h3>' +
+        '<div class="flex items-center gap-1.5 shrink-0">' +
+          '<span class="px-2 py-0.5 rounded text-[11px] font-semibold text-white ' + info.cls + '">' + info.label + '</span>' +
+          '<button class="fav-btn w-7 h-7 rounded-full flex items-center justify-center text-sm ' + (fav ? 'bg-rose-500 text-white' : 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-400 dark:text-gray-400 hover:text-rose-400') + '" data-id="' + b.id + '" title="收藏">♥</button>' +
         '</div>' +
-        '<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">' + (b.intro || '') + '</p>' +
+      '</div>' +
+      '<div class="mt-3 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">' +
+        '<span class="flex items-center gap-1 truncate">👤 <span class="truncate max-w-[7rem]">' + (b.author || '未知作者') + '</span></span>' +
+        '<span class="flex items-center gap-1">📁 ' + (b.category || '未分类') + '</span>' +
+      '</div>' +
+      '<div class="mt-3 flex items-center justify-between">' +
+        '<span class="text-xs text-gray-400 dark:text-gray-500 select-none tracking-wide">' + stars + '</span>' +
+        '<span class="text-xs text-orange-500/80 dark:text-orange-400/80 group-hover:text-orange-500 dark:group-hover:text-orange-400">阅读 →</span>' +
       '</div>' +
     '</a>';
   }
 
-  // 事件委托：收藏 / 评分（避免逐卡片绑定，且防止触发卡片跳转）
+  // 事件委托：收藏 / 评分
   document.addEventListener('click', function (e) {
     const fb = e.target.closest('.fav-btn');
     if (fb) { e.preventDefault(); e.stopPropagation(); toggleFav(fb.dataset.id); rerender(); return; }
@@ -341,15 +346,21 @@
     }
   });
 
-  // ---------- 分类标签 ----------
+  // ---------- 分类（左侧侧栏 + 移动端横滑） ----------
   function renderCategories() {
     const cats = ['全部', ...Array.from(new Set(books.map(b => b.category).filter(Boolean)))];
-    $('categories').innerHTML = cats.map(c =>
-      '<button data-cat="' + c + '" class="cat-btn px-3 py-1 rounded-full text-sm border ' +
-      (c === activeCategory ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' :
-        'bg-white text-gray-600 border-gray-200 dark:bg-[#1a1a1a] dark:text-gray-300 dark:border-gray-700') +
+    const listHtml = cats.map(c =>
+      '<button data-cat="' + c + '" class="cat-btn w-full text-left px-3 py-2 rounded-lg text-sm transition ' +
+      (c === activeCategory ? 'bg-orange-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] hover:text-gray-900 dark:hover:text-white') +
       '">' + c + '</button>'
     ).join('');
+    const barHtml = cats.map(c =>
+      '<button data-cat="' + c + '" class="cat-btn shrink-0 px-3 py-1 rounded-full text-sm border whitespace-nowrap ' +
+      (c === activeCategory ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#141414] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-[#333]') +
+      '">' + c + '</button>'
+    ).join('');
+    if ($('catList')) $('catList').innerHTML = listHtml;
+    if ($('catBar')) $('catBar').innerHTML = barHtml;
     document.querySelectorAll('.cat-btn').forEach(btn => {
       btn.addEventListener('click', () => { activeCategory = btn.dataset.cat; currentPage = 1; applyFilter(); });
     });
@@ -363,35 +374,37 @@
       const matchTerm = !term || [b.title, b.author, b.category].some(v => (v || '').toLowerCase().includes(term));
       return matchCat && matchTerm;
     });
-    // 收藏筛选模式：仅保留已收藏
-    if (sortMode === 'fav') filtered = filtered.filter(b => isFav(b.id));
-    // 排序：最新=id 倒序；热门=hot 优先；其余回退 id 倒序
+    // 排序：最新=id 倒序；热门=hot 优先；精华=评分优先
     filtered.sort((a, b) => {
       if (sortMode === 'hot') {
         const hv = (x) => (x.hot === true ? 1 : (typeof x.hot === 'number' ? x.hot : 0));
         const ha = hv(a), hb = hv(b);
         if (hb !== ha) return hb - ha;
       }
+      if (sortMode === 'best') {
+        const ra = getRating(a.id), rb = getRating(b.id);
+        if (rb !== ra) return rb - ra;
+      }
       return (b.id || 0) - (a.id || 0);
     });
     currentPage = 1;
+    renderCategories(); // 刷新分类高亮
     renderBooks();
 
-    // 随机推荐仅在「无搜索 + 全部分类 + 非收藏」时显示
-    const showRandom = !term && activeCategory === '全部' && sortMode !== 'fav' && books.length > 0;
+    // 随机推荐仅在「最新 + 无搜索 + 全部分类」时显示
+    const showRandom = sortMode === 'latest' && !term && activeCategory === '全部' && books.length > 0;
     $('randomSection').classList.toggle('hidden', !showRandom);
     if (showRandom) renderRandom();
   }
 
-  // 收藏 / 评分变更后只重渲染，不影响分页位置
   function rerender() {
     renderBooks();
     if (!$('randomSection').classList.contains('hidden')) renderRandom();
     renderShelf();
-    syncPush(); // 已登录则防抖上传到云端
+    syncPush();
   }
 
-  // ---------- 我的书架（收藏 + 评分独立面板，桌面侧栏 / 移动端折叠区块共用） ----------
+  // ---------- 我的书架 ----------
   function escapeHtml(s) {
     return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
@@ -399,7 +412,7 @@
     const r = getRating(b.id);
     const stars = [1, 2, 3, 4, 5].map(v => '<span class="' + (v <= r ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600') + '">★</span>').join('');
     return '<a href="read.html?id=' + b.id + '" class="block py-1">' +
-      '<div class="font-medium truncate">' + escapeHtml(b.title) + '</div>' +
+      '<div class="font-medium truncate text-gray-800 dark:text-gray-100">' + escapeHtml(b.title) + '</div>' +
       '<div class="text-xs mt-0.5">' + stars + '</div>' +
     '</a>';
   }
@@ -413,7 +426,6 @@
     const m = $('shelfBody'); if (m) m.innerHTML = html;
     const d = $('deskShelfBody'); if (d) d.innerHTML = html;
   }
-  // 移动端书架折叠
   const shelfToggle = $('shelfToggle');
   if (shelfToggle) shelfToggle.addEventListener('click', () => {
     const body = $('shelfBody');
@@ -453,34 +465,31 @@
     if (randomCat !== '全部') pool = pool.filter(b => b.category === randomCat);
     if (excludeRead) pool = pool.filter(b => !localStorage.getItem('ebook_progress_' + b.id));
     if (ratingFirst && pool.length > 4) {
-      // 评分优先：按评分降序取前一半作为候选，高评分更易出现；评分全 0 时退化为普通随机
       const sorted = pool.slice().sort((a, b) => getRating(b.id) - getRating(a.id));
       const topN = Math.max(4, Math.ceil(sorted.length / 2));
       pool = sorted.slice(0, topN);
     }
     if (favFirst) {
-      // 收藏优先：已收藏的书优先入选；不足 4 本时用未收藏补足；无收藏则退化为普通随机
       const favs = pool.filter(b => isFav(b.id));
       if (favs.length > 0) {
         pool = favs.length >= 4 ? favs : favs.concat(pool.filter(b => !isFav(b.id)).slice(0, 4 - favs.length));
       }
     }
     if (unratedOnly) {
-      // 只看未评分：仅保留评分=0 的书；若无未评分则退化为普通随机（保持原 pool）
       const unrated = pool.filter(b => getRating(b.id) === 0);
       if (unrated.length > 0) pool = unrated;
     }
     const ids = pool.map(b => b.id);
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-    currentRandom = ids.slice(0, Math.min(4, ids.length));
+    currentRandom = ids.slice(0, Math.min(6, ids.length));
   }
   function populateRandomCat() {
     $('randomCat').innerHTML = ['全部', ...allCategories].map(c => '<option value="' + c + '">' + c + '</option>').join('');
   }
   function setExcludeRead(on) {
     excludeRead = on;
-    $('excludeReadBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 transition ' +
-      (on ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+    $('excludeReadBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] transition ' +
+      (on ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
     pickRandom(); renderRandom();
   }
   function renderRandom() {
@@ -493,21 +502,21 @@
   $('excludeReadBtn').addEventListener('click', () => setExcludeRead(!excludeRead));
   function setRatingFirst(on) {
     ratingFirst = on;
-    $('ratingFirstBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 transition ' +
-      (on ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+    $('ratingFirstBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] transition ' +
+      (on ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
     pickRandom(); renderRandom();
   }
   $('ratingFirstBtn').addEventListener('click', () => setRatingFirst(!ratingFirst));
   function setFavFirst(on) {
     favFirst = on;
-    $('favFirstBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 transition ' +
-      (on ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+    $('favFirstBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] transition ' +
+      (on ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
     pickRandom(); renderRandom();
   }
   function setUnrated(on) {
     unratedOnly = on;
-    $('unratedBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 transition ' +
-      (on ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
+    $('unratedBtn').className = 'text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] transition ' +
+      (on ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222]');
     pickRandom(); renderRandom();
   }
   $('favFirstBtn').addEventListener('click', () => setFavFirst(!favFirst));
@@ -515,11 +524,11 @@
 
   // 分页控件
   function renderPagination(pages) {
-    let html = '<button ' + (currentPage === 1 ? 'disabled' : '') + ' data-page="' + (currentPage - 1) + '" class="px-3 py-1 rounded-lg text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 disabled:opacity-40">上一页</button>';
+    let html = '<button ' + (currentPage === 1 ? 'disabled' : '') + ' data-page="' + (currentPage - 1) + '" class="px-3 py-1 rounded-lg text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] disabled:opacity-40">上一页</button>';
     for (let i = 1; i <= pages; i++) {
-      html += '<button data-page="' + i + '" class="px-3 py-1 rounded-lg text-sm ' + (i === currentPage ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900' : 'bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700') + '">' + i + '</button>';
+      html += '<button data-page="' + i + '" class="px-3 py-1 rounded-lg text-sm ' + (i === currentPage ? 'bg-orange-500 text-white' : 'bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333]') + '">' + i + '</button>';
     }
-    html += '<button ' + (currentPage === pages ? 'disabled' : '') + ' data-page="' + (currentPage + 1) + '" class="px-3 py-1 rounded-lg text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 disabled:opacity-40">下一页</button>';
+    html += '<button ' + (currentPage === pages ? 'disabled' : '') + ' data-page="' + (currentPage + 1) + '" class="px-3 py-1 rounded-lg text-sm bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] disabled:opacity-40">下一页</button>';
     $('pagination').innerHTML = html;
     document.querySelectorAll('#pagination button').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -531,22 +540,21 @@
 
   $('search').addEventListener('input', (e) => { searchTerm = e.target.value; applyFilter(); });
 
-  // 排序：最新 / 热门 / 收藏
+  // 排序 Tabs：最新 / 精华 / 热门
   function setSort(mode) {
     sortMode = mode;
-    const base = 'sort-btn px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 ';
-    const on = 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900';
-    const off = 'bg-white text-gray-600 dark:bg-[#1a1a1a] dark:text-gray-300';
-    $('sortLatest').className = base + (mode === 'latest' ? on : off);
-    $('sortHot').className = base + (mode === 'hot' ? on : off);
-    $('sortFav').className = base + (mode === 'fav' ? on : off);
+    const on = 'tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-orange-500 text-orange-500 dark:text-orange-400';
+    const off = 'tab flex-1 sm:flex-none px-4 py-2 text-sm font-medium border-b-2 -mb-px transition border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200';
+    if ($('sortLatest')) $('sortLatest').className = mode === 'latest' ? on : off;
+    if ($('sortBest')) $('sortBest').className = mode === 'best' ? on : off;
+    if ($('sortHot')) $('sortHot').className = mode === 'hot' ? on : off;
     applyFilter();
   }
   $('sortLatest').addEventListener('click', () => setSort('latest'));
+  $('sortBest').addEventListener('click', () => setSort('best'));
   $('sortHot').addEventListener('click', () => setSort('hot'));
-  $('sortFav').addEventListener('click', () => setSort('fav'));
 
-  // 本机访问统计（纯前端 localStorage，不依赖任何第三方）
+  // 本机访问统计
   (function () {
     try {
       let n = parseInt(localStorage.getItem('ebook_visits') || '0', 10);
@@ -571,7 +579,7 @@
     $('empty').innerHTML = '<div class="text-4xl mb-3">⚠️</div><p class="text-sm">books.json 加载失败，请通过本地服务器预览（见 README）。</p>';
   });
 
-  // 启动：刷新登录态；已登录则拉取云端进度合并（本地数据随后在渲染中体现）
+  // 启动
   updateAuthUI();
   if (getToken()) syncPull();
 })();
