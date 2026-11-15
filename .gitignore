@@ -7,6 +7,9 @@ covers_upload_parallel.txt
 cat/
 cat_upload.txt
 
+# 书页富化缓存（可由 tools/build_book_pages.js 重新生成，不进仓库）
+book/_preview.json
+
 # R2 上传清单
 r2_urls.txt
 
