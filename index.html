@@ -90,6 +90,18 @@
         <div id="shelfBody" class="hidden mt-3 space-y-3"></div>
       </section>
 
+      <!-- 今日推荐（数据来自 promo/out.json，由 GitHub Actions 每日更新；失败时前端同源降级） -->
+      <section id="dailyRec" class="hidden mb-8 rounded-xl bg-gradient-to-r from-[#ff9500]/5 to-transparent dark:from-[#ff9500]/10 border border-[#ff9500]/25 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-medium text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <span class="text-[#ff9500]">✦</span> 今日推荐
+            <span id="dailyRecDate" class="text-[11px] font-normal text-gray-400"></span>
+          </h2>
+          <span class="text-[11px] text-gray-400">每日更新 · 编辑精选</span>
+        </div>
+        <div id="dailyRecGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
+      </section>
+
       <!-- 随机推荐区块 -->
       <section id="randomSection" class="mb-8">
         <div class="flex items-center justify-between mb-3">
@@ -686,6 +698,65 @@
     } catch (e) {}
   })();
 
+  // ---------- 今日推荐 ----------
+  // 与 tools/generate_promo.js 保持同源：分类白名单 + 未成年人/测试过滤 + 按日期稳定轮换
+  const REC_SAFE_CATS = ['都市激情', '真实体验', '人妻熟女', '经验故事', '古典武侠'];
+  const REC_MINOR_RE = /(未成年|蘿莉|罗莉|正太|幼女|幼童|雛女|雏女|小學生|小学生|國中|国中|初中生|高中生|高中|中學生|中学生|少年|少女|小孩|男童|女童|未滿|未满|[0-9]{1,2}[岁嵗]|幼|懵懂|蓓蕾|养成|養成)/i;
+  const REC_TEST_RE = /(测试|測試|test|占位|示例|placeholder)/i;
+
+  function recSeedIndex(seed, len) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h % Math.max(1, len);
+  }
+  function recPickDaily(cands, dayKey, count) {
+    const out = [], used = new Set();
+    let cursor = recSeedIndex(dayKey, cands.length);
+    const stride = Math.max(1, Math.floor(cands.length / count));
+    for (let i = 0; i < count && cands.length; i++) {
+      let idx = (cursor + i * stride + recSeedIndex(dayKey + '#' + i, cands.length)) % cands.length;
+      let guard = 0;
+      while (used.has(idx) && guard++ < cands.length) idx = (idx + 1) % cands.length;
+      used.add(idx); out.push(cands[idx]);
+    }
+    return out;
+  }
+  function recFallbackCandidates() {
+    return books.filter(b =>
+      REC_SAFE_CATS.indexOf(b.category) !== -1 &&
+      !REC_MINOR_RE.test(b.title || '') && !REC_MINOR_RE.test(b.author || '') &&
+      !REC_TEST_RE.test(b.title || '') && b.url && /^book\//.test(b.url)
+    );
+  }
+  function renderRecCards(items) {
+    const sec = $('dailyRec'), grid = $('dailyRecGrid');
+    if (!sec || !grid || !items || !items.length) { if (sec) sec.classList.add('hidden'); return; }
+    // items 可能是完整 book 对象（降级）或精简对象（out.json），用 id 映射回完整 book 以复用 cardHtml
+    const html = items.map(it => {
+      const full = books.find(b => String(b.id) === String(it.id));
+      return full ? cardHtml(full) : '';
+    }).filter(Boolean).join('');
+    if (!html) { sec.classList.add('hidden'); return; }
+    grid.innerHTML = html;
+    const dEl = $('dailyRecDate');
+    if (dEl) dEl.textContent = (items[0] && items[0].dayKey) || new Date().toISOString().slice(0, 10);
+    sec.classList.remove('hidden');
+  }
+  function initDailyRec() {
+    const cands = recFallbackCandidates();
+    const dayKey = new Date().toISOString().slice(0, 10);
+    // 优先用 Actions 生成的数据；线上/本地找不到 out.json 时静默降级，不报错
+    fetch('promo/out.json', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('no out.json')))
+      .then(o => {
+        if (o && Array.isArray(o.books) && o.books.length) renderRecCards(o.books);
+        else renderRecCards(recPickDaily(cands, dayKey, Math.min(3, cands.length)).map(b => ({ id: b.id })));
+      })
+      .catch(() => {
+        renderRecCards(recPickDaily(cands, dayKey, Math.min(3, cands.length)).map(b => ({ id: b.id })));
+      });
+  }
+
   // 加载书库数据
   fetch('books.json').then(r => r.json()).then(data => {
     books = Array.isArray(data) ? data : [];
@@ -694,6 +765,7 @@
     renderCategories();
     renderShelf();
     applyFilter();
+    initDailyRec();
   }).catch(err => {
     $('loading').classList.add('hidden');
     $('empty').classList.remove('hidden');

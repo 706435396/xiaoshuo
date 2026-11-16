@@ -14,8 +14,7 @@ book/chapters/
 # R2 上传清单
 r2_urls.txt
 
-# SEO 自动提交的生成产物（由 GitHub Actions 重新生成）
-promo/out.json
+# SEO 自动提交产物 promo/out.json 需随站点部署供首页读取，故不忽略
 
 # Python
 __pycache__/

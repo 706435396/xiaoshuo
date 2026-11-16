@@ -7,6 +7,9 @@ on:
     - cron: '0 3,12 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   submit:
     runs-on: ubuntu-latest
@@ -21,6 +24,8 @@ jobs:
           node-version: '20'
 
       - name: 1. 生成站内推荐数据与推送清单（含题材过滤）
+        env:
+          PROMO_NO_BODY_CACHE: '1'
         run: node tools/generate_promo.js
 
       - name: 2. 推送 URL 给 Bing / Yandex（IndexNow）
@@ -34,3 +39,17 @@ jobs:
           name: seo-submit-output
           path: promo/out.json
           retention-days: 7
+
+      # 把当天推荐数据写回仓库，CF Pages 自动部署后首页即可读到（与 IndexNow 推送 URL 一致）
+      # [skip ci] + 内容无变化才跳过，避免每日空提交与循环触发
+      - name: 3. 回写推荐数据到仓库（供首页读取）
+        run: |
+          if git diff --quiet -- promo/out.json; then
+            echo "out.json 无变化，跳过提交"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add promo/out.json
+          git commit -m "chore: 更新今日推荐数据 [skip ci]" || echo "无需提交"
+          git push || echo "推送失败（不影响本次收录提交）"

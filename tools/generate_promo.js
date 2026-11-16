@@ -38,6 +38,8 @@ const MINOR_RE = new RegExp(
 const TEST_RE = /(测试|測試|test|占位|示例|placeholder)/i;
 
 function buildBodyBlocklist() {
+  // CI 上没有本地章节缓存；设为 1 可让 GitHub Actions 与首页降级算法候选池一致
+  if (process.env.PROMO_NO_BODY_CACHE === '1') return new Set();
   const dir = path.join(ROOT, 'book', 'chapters');
   let files = [];
   try { files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.json')) : []; }
