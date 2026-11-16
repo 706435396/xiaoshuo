@@ -1,0 +1,36 @@
+name: SEO Auto Submit (IndexNow)
+
+# 每天 UTC 03:00 与 12:00（北京时间 11:00 / 20:00）各跑一次
+# 仅做技术性收录：生成站内推荐数据 + 推送 URL 给 Bing/Yandex（不向任何外部平台发布内容）
+on:
+  schedule:
+    - cron: '0 3,12 * * *'
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 1. 生成站内推荐数据与推送清单（含题材过滤）
+        run: node tools/generate_promo.js
+
+      - name: 2. 推送 URL 给 Bing / Yandex（IndexNow）
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: node tools/indexnow_submit.js
+
+      - name: 上传本次产出供查看
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-submit-output
+          path: promo/out.json
+          retention-days: 7
