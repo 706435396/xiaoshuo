@@ -58,16 +58,16 @@
       <label for="rdesc">问题描述</label>
       <textarea id="rdesc" placeholder="请尽量详细描述，便于我们快速核实"></textarea>
       <label for="rmail">你的邮箱（选填，便于回复处理结果）</label>
-      <input id="rmail" type="email" placeholder="you@example.com" />
+      <input id="rmail" type="email" placeholder="your.name@gmail.com" />
       <button type="button" id="rsubmit">提交举报</button>
       <span class="ok" id="rok">✓ 已记录你的举报，我们会尽快核实处理。</span>
-      <p class="tip">说明：本站为静态演示站点，表单仅在本地记录，不会上传服务器。正式运营时请将提交接入后端工单系统或替换为下方举报邮箱。</p>
+      <p class="tip">说明：提交后将调用你的邮件客户端生成一封预填邮件，请点击发送；若你的设备未配置邮件客户端，请直接发送邮件至下方举报邮箱。我们仅处理举报内容，不用于其他用途。</p>
     </form>
   </section>
 
   <section class="block">
     <h2>其他举报渠道</h2>
-    <p>举报邮箱：<a href="mailto:report@example.com">report@example.com</a>（请替换为实际邮箱）</p>
+    <p>举报邮箱：<a href="mailto:report@shenye.72tool.com">report@shenye.72tool.com</a></p>
     <p>我们承诺：对每一条有效举报在 3 个工作日内核实并反馈；对确认违规的内容立即下架，对违规来源永久封禁。</p>
   </section>
 
@@ -79,14 +79,33 @@
 <script>
   document.getElementById('rsubmit').addEventListener('click', function () {
     var type = document.getElementById('rtype').value;
+    var url = document.getElementById('rurl').value.trim();
     var desc = document.getElementById('rdesc').value.trim();
+    var mail = document.getElementById('rmail').value.trim();
     if (!type || !desc) { alert('请填写举报类型和问题描述'); return; }
+
+    // 本地留底（便于用户自查提交记录，不作为送达依据）
     try {
       var arr = JSON.parse(localStorage.getItem('sy_reports') || '[]');
-      arr.push({ t: Date.now(), type: type, url: document.getElementById('rurl').value, desc: desc, mail: document.getElementById('rmail').value });
+      arr.push({ t: Date.now(), type: type, url: url, desc: desc, mail: mail });
       localStorage.setItem('sy_reports', JSON.stringify(arr.slice(-200)));
     } catch (e) {}
-    document.getElementById('rok').style.display = 'inline';
+
+    // 真实投递：生成预填邮件，交由邮件客户端发送 → Email Routing 转发到处理邮箱
+    var subject = '[内容举报] ' + type + ' - ' + (url || '未填写链接');
+    var body = '举报类型：' + type + '\n' +
+               '内容链接：' + (url || '未填写') + '\n' +
+               '问题描述：\n' + desc + '\n\n' +
+               '举报人邮箱：' + (mail || '未填写') + '\n' +
+               '提交时间：' + new Date().toISOString();
+    var href = 'mailto:report@shenye.72tool.com' +
+               '?subject=' + encodeURIComponent(subject) +
+               '&body=' + encodeURIComponent(body);
+    window.location.href = href;
+
+    var ok = document.getElementById('rok');
+    ok.textContent = '✓ 已生成预填邮件，请在邮件客户端中点击发送；若未自动打开，请手动发邮件至 report@shenye.72tool.com';
+    ok.style.display = 'inline';
   });
 </script>
 <script src="/agegate.js" defer></script>

@@ -30,8 +30,9 @@
     <p>本站为内容阅读站点，原则上不需要你提供个人身份信息即可浏览。我们可能涉及的信息包括：</p>
     <ul>
       <li><strong>本地存储数据</strong>：收藏、评分、阅读进度、年龄验证状态等，保存在你的浏览器 localStorage / Cookie 中，用于提升体验。</li>
-      <li><strong>可选账号信息</strong>：若你使用注册/登录功能，我们会保存用户名与经加盐哈希后的密码摘要（不保存明文密码）。</li>
-      <li><strong>举报信息</strong>：你通过举报表单提交的内容，仅用于处理该举报。</li>
+      <li><strong>可选账号信息</strong>：若你使用注册/登录功能，我们会保存用户名与经加盐 SHA-256 哈希后的密码摘要（不保存明文密码），以及用于维持登录状态的令牌（有效期 30 天）。</li>
+      <li><strong>云端阅读进度</strong>：登录用户的阅读进度同步存储于 Cloudflare KV，用于跨设备续读。</li>
+      <li><strong>举报与投诉材料</strong>：你通过举报表单或邮件提交的内容（含链接、描述、可选邮箱），仅用于核实与处理该举报；处理完成后按需要保留记录以备查，不用于其他目的。</li>
     </ul>
   </section>
 
@@ -46,8 +47,8 @@
   </section>
 
   <section class="block">
-    <h2>四、第三方服务</h2>
-    <p>本站静态资源与书籍文件托管于 Cloudflare Pages 与 Cloudflare R2。访问时你的浏览器会与这些服务建立连接，其网络日志可能按服务商政策记录 IP 等信息。本站不接入第三方广告追踪或行为分析脚本。</p>
+    <h2>四、第三方服务与数据存储位置</h2>
+    <p>本站静态页面由 Cloudflare Pages 提供，书籍文件托管于 Cloudflare R2，账号与阅读进度数据存放于 Cloudflare KV，均可能按 Cloudflare 的政策记录访问日志（含 IP 等信息）。本站不接入第三方广告追踪或行为分析脚本。</p>
   </section>
 
   <section class="block">
@@ -56,8 +57,9 @@
   </section>
 
   <section class="block">
-    <h2>六、你的权利</h2>
-    <p>你有权访问、更正或删除你的本地数据；可通过清除浏览器数据自行完成。如需协助，请通过 <a href="/report">举报/联系入口</a> 与我们联系。</p>
+    <h2>六、你的权利与账号删除</h2>
+    <p>你有权访问、更正或删除你的数据。本地数据（收藏、评分、进度、年龄状态）可通过清除浏览器数据自行完成；如需<strong>删除云端账号及阅读进度</strong>，请发送邮件至 <a href="mailto:contact@shenye.72tool.com">contact@shenye.72tool.com</a>，并提供注册时使用的用户名。我们在核实后将删除对应的账号与 KV 数据，并回复处理结果。</p>
+    <p>隐私咨询、数据访问或删除请求，均可联系 <a href="mailto:contact@shenye.72tool.com">contact@shenye.72tool.com</a>。</p>
   </section>
 
   <section class="block">
