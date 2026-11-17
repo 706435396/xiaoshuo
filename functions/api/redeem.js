@@ -101,6 +101,6 @@ export async function onRequestPost({ request, env, context }) {
       ? '兑换成功，会员已开通'
       : order.status === 'rejected'
         ? '卡密核验未通过'
-        : '兑换成功，会员已生效；管理员将复核卡密，请勿重复提交'
+        : '兑换成功，会员已生效，可直接去阅读'
   });
 }
