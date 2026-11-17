@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex,nofollow" />
+<title>会员管理 | 深夜文库</title>
+<style>
+  :root{--bg:#0d0d0d;--card:#161616;--fg:#e5e5e5;--muted:#9a9a9a;--orange:#ff9500;--line:#262626}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7}
+  .wrap{max-width:520px;margin:60px auto;padding:0 20px}
+  h1{font-size:20px;margin:0 0 6px}
+  .hint{color:var(--muted);font-size:13px;margin-bottom:24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px}
+  label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+  input{width:100%;background:#0a0a0a;border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:10px 12px;font-size:14px;outline:none}
+  input:focus{border-color:var(--orange)}
+  button{margin-top:20px;width:100%;background:var(--orange);color:#111;border:0;border-radius:8px;padding:11px;font-size:15px;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.5;cursor:default}
+  .msg{margin-top:16px;font-size:13px;min-height:20px}
+  .ok{color:#5ad48a}.err{color:#ff7a7a}
+  a{color:var(--orange)}
+  .foot{margin-top:24px;font-size:12px;color:#666;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>会员管理 · 深夜文库</h1>
+  <div class="hint">此页面不对外公开，仅用于手动开通/续费会员。</div>
+  <div class="card">
+    <label>管理员密钥</label>
+    <input id="secret" type="password" placeholder="ADMIN_SECRET" />
+    <label>用户名（大小写敏感，须与注册时一致）</label>
+    <input id="username" type="text" placeholder="例如：zhangsan" />
+    <label>开通天数（1-3650，留空默认 30 天；未过期则顺延）</label>
+    <input id="days" type="number" value="30" min="1" max="3650" />
+    <button id="btn">开通 / 续费</button>
+    <div class="msg" id="msg"></div>
+  </div>
+  <div class="foot">
+    未配置环境变量时，起步密钥为 <code>shenye-vip-2026</code>（建议尽快在 Cloudflare Pages → 设置 → 环境变量中新增 <code>ADMIN_SECRET</code> 覆盖，并妥善保管）。<br />
+    <a href="/">返回首页</a>
+  </div>
+</div>
+<script>
+  const $ = id => document.getElementById(id);
+  $('btn').addEventListener('click', async () => {
+    const secret = $('secret').value.trim();
+    const username = $('username').value.trim();
+    const days = $('days').value;
+    if (!secret || !username) { $('msg').className = 'msg err'; $('msg').textContent = '请填写密钥和用户名'; return; }
+    $('btn').disabled = true;
+    $('msg').className = 'msg'; $('msg').textContent = '提交中…';
+    try {
+      const res = await fetch('/api/grant', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ username, days: days ? Number(days) : 30 })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        $('msg').className = 'msg ok';
+        $('msg').textContent = '✅ 已开通：' + data.username + ' 会员至 ' + data.vipUntil;
+      } else {
+        $('msg').className = 'msg err';
+        $('msg').textContent = '❌ ' + (data.error || ('失败 HTTP ' + res.status));
+      }
+    } catch (e) {
+      $('msg').className = 'msg err'; $('msg').textContent = '网络错误：' + e.message;
+    }
+    $('btn').disabled = false;
+  });
+</script>
+</body>
+</html>

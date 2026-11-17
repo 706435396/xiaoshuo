@@ -176,7 +176,8 @@ function bookPageHtml(book, preview, chData) {
 
   const readUrl = '../read?id=' + encodeURIComponent(id) +
     '&u=' + encodeURIComponent(book.url || '') +
-    '&t=' + encodeURIComponent(title);
+    '&t=' + encodeURIComponent(title) +
+    (book.free ? '&free=1' : '');
 
   // 同类推荐内链（真实 <a>，搜索引擎可爬）
   const rel = relatedBooks(book, 8).map(r =>
@@ -282,6 +283,7 @@ function bookPageHtml(book, preview, chData) {
   <div class="sub">
     <span class="badge">${esc(type)}</span>
     <span class="badge">${esc(category)}</span>
+    ${book.free ? '<span class="badge" style="color:#5ad48a;border-color:#2c7a4b">全书免费</span>' : '<span class="badge" style="color:var(--orange);border-color:var(--orange)">会员 · 前3章试读</span>'}
     ${book.hot ? '<span class="badge" style="color:var(--orange);border-color:var(--orange)">热门</span>' : ''}
   </div>
 

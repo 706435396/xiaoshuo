@@ -23,5 +23,7 @@ export async function onRequestPost({ request, env }) {
 
   const token = newToken();
   await env.USER_DATA.put('sess:' + token, JSON.stringify({ user: name, exp: Date.now() + TOKEN_TTL }));
-  return json({ token, username: name });
+  const res = json({ token, username: name });
+  res.headers.append('Set-Cookie', `sy_token=${token}; Path=/; Max-Age=${Math.floor(TOKEN_TTL / 1000)}; HttpOnly; SameSite=Lax; Secure`);
+  return res;
 }

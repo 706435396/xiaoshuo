@@ -40,6 +40,7 @@
       <span id="rateStars" class="hidden sm:flex shrink-0 items-center gap-0.5 text-lg"></span>
       <button id="backupBtn" title="导出进度备份" class="shrink-0 px-2 py-1 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333] text-sm transition">⤓</button>
       <button id="restoreBtn" title="导入进度备份" class="shrink-0 px-2 py-1 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-[#333] text-sm transition">⤒</button>
+      <button id="vipBtn" title="会员权益" class="shrink-0 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-[#3a2a08] text-amber-700 dark:text-amber-300 text-sm hover:opacity-90 transition whitespace-nowrap">开通会员</button>
       <button id="authBtn" title="登录 / 注册" class="shrink-0 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] text-sm hover:bg-gray-200 dark:hover:bg-[#333] transition">登录</button>
       <input id="importFile" type="file" accept="application/json" class="hidden" />
       <!-- epub 控制面板 -->
@@ -114,6 +115,11 @@
   const R2_BASE = 'https://pub-0286f9f1305243479f676d853bc3c827.r2.dev/';
   const resolveUrl = (v) => (v ? R2_BASE + v : '');
 
+  // ---------- 会员制 ----------
+  const FREE_TRIAL = 3;          // 付费书免费试读章节数（须与章节云函数一致）
+  let isMember = false;           // 当前用户是否为有效会员
+  let isFreeBook = false;         // 当前书是否为全书免费
+
   // ---------- 账号登录 + 进度云同步（Pages Functions + KV） ----------
   const AUTH_KEY = 'ebook_token', USER_KEY = 'ebook_user';
   function getToken() { try { return localStorage.getItem(AUTH_KEY); } catch (e) { return null; } }
@@ -161,15 +167,24 @@
       if (r.status === 401) logout();
     }, 800);
   }
+  // 查询会员状态：未登录或非会员 → false
+  async function refreshMember() {
+    if (!getToken()) { isMember = false; return false; }
+    const r = await apiCall('/me');
+    isMember = !!(r.ok && r.data && r.data.isVip);
+    return isMember;
+  }
   function onAuthed(token, user) {
     localStorage.setItem(AUTH_KEY, token);
     localStorage.setItem(USER_KEY, user);
     updateAuthUI(); syncPull();
+    refreshMember().then(() => { if (typeof window.__onMemberChange === 'function') window.__onMemberChange(); });
   }
-  function logout() { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(USER_KEY); updateAuthUI(); }
+  function logout() { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(USER_KEY); isMember = false; updateAuthUI(); if (typeof window.__onMemberChange === 'function') window.__onMemberChange(); }
   function updateAuthUI() {
     const b = $('authBtn'); if (!b) return;
     b.textContent = getCurUser() ? (getCurUser() + ' · 退出') : '登录';
+    const vip = $('vipBtn'); if (vip) vip.textContent = isMember ? '★ 会员' : '开通会员';
   }
   let authMode = 'login';
   function switchAuthTab(mode) {
@@ -193,6 +208,7 @@
     else $('authMsg').textContent = r.data.error || '操作失败';
   }
   $('authBtn').addEventListener('click', () => { if (getCurUser()) logout(); else openAuth('login'); });
+  $('vipBtn').addEventListener('click', () => { location.href = '/vip-info'; });
   $('authClose').addEventListener('click', closeAuth);
   $('authModal').addEventListener('click', (e) => { if (e.target === $('authModal')) closeAuth(); });
   $('tabLogin').addEventListener('click', () => switchAuthTab('login'));
@@ -279,7 +295,7 @@
     return new Promise((resolve, reject) => {
       if (presetUrl) {
         const m = (presetUrl.split('?')[0].match(/\.([A-Za-z0-9]+)$/) || [])[1] || '';
-        resolve({ id: id || '', title: presetTitle || '阅读器', url: presetUrl, type: m.toLowerCase() });
+        resolve({ id: id || '', title: presetTitle || '阅读器', url: presetUrl, type: m.toLowerCase(), free: params.get('free') === '1' });
         return;
       }
       fetch('books.json').then(r => r.json()).then(books => {
@@ -289,7 +305,9 @@
     });
   }
 
-  getBook().then(book => {
+  getBook().then(async book => {
+    isFreeBook = book.free === true;
+    await refreshMember(); // 登录后据会员态解锁付费章；未登录自动为 false
 
     $('bookTitle').textContent = book.title || '阅读器';
     // 类型角标（与首页卡片一致：TXT 蓝 / EPUB 紫 / PDF 红）
@@ -417,6 +435,25 @@
         if (i >= chapters.length) i = chapters.length - 1;
         curChapter = i;
         const c = chapters[i];
+        // 付费墙：付费书第 4 章起，非会员只显示开通引导，不渲染正文
+        const locked = !isFreeBook && !isMember && i >= FREE_TRIAL;
+        if (locked) {
+          wrap.innerHTML =
+            '<div style="text-align:center;padding:52px 20px">' +
+              '<div style="font-size:46px;line-height:1;margin-bottom:16px">🔒</div>' +
+              '<div style="font-size:20px;font-weight:600;color:#ff9500;margin-bottom:14px">此章节为会员专享</div>' +
+              '<p style="color:#888;line-height:1.9;max-width:480px;margin:0 auto 24px">' +
+                '本书前 ' + FREE_TRIAL + ' 章可免费试读，后续章节需开通会员解锁。<br />已是会员请登录后阅读，权益自动生效。</p>' +
+              '<a href="/vip-info" style="display:inline-block;background:#ff9500;color:#111;border-radius:8px;padding:11px 24px;font-weight:600;text-decoration:none">了解会员权益 / 开通</a>' +
+            '</div>';
+          wrap.scrollTop = 0;
+          if (info) info.textContent = '第 ' + (i + 1) + ' / ' + chapters.length + ' 章 · 🔒 会员专享';
+          if (nav) nav.classList.remove('hidden');
+          if ($('chapPrev')) $('chapPrev').disabled = (i === 0);
+          if ($('chapNext')) $('chapNext').disabled = (i === chapters.length - 1);
+          const tocSel = $('tocSelect'); if (tocSel) tocSel.value = String(i);
+          return;
+        }
         wrap.innerHTML =
           '<h2 style="font-size:1.2em;font-weight:600;margin:.2em 0 1em;border-bottom:1px solid rgba(128,128,128,.2);padding-bottom:.4em">' + esc(c.title) + '</h2>' +
           (c.paras.length ? c.paras.map(p => '<p style="margin:0 0 1em;text-indent:2em;line-height:1.9">' + esc(p) + '</p>').join('') : '<p style="color:#999">（本章暂无正文）</p>');
@@ -463,6 +500,9 @@
         renderChapter(i);
       }
 
+      // 会员态变化（登录/退出/开通）后重绘当前章，立即解锁或回收
+      window.__onMemberChange = () => { renderChapter(curChapter); };
+
       // 控件：顶部 ‹ › 与底部导航 = 上一章 / 下一章
       $('prevBtn').title = '上一章';
       $('nextBtn').title = '下一章';
@@ -498,7 +538,8 @@
           chapterLen.push(len);
           totalChars += len;
         }
-        sel.innerHTML = '<option value="">目录</option>' + chapters.map((c, i) => '<option value="' + i + '">' + esc(c.title.slice(0, 30)) + '</option>').join('');
+        const tocLocked = (i) => (!isFreeBook && !isMember && i >= FREE_TRIAL);
+        sel.innerHTML = '<option value="">目录</option>' + chapters.map((c, i) => '<option value="' + i + '">' + esc(c.title.slice(0, 30)) + (tocLocked(i) ? ' 🔒' : '') + '</option>').join('');
         renderChapter(curChapter);
       }).catch(err => {
         showError('TXT 加载失败：' + err.message + '（请确认链接有效且 R2 已开启 CORS）');

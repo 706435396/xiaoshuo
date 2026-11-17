@@ -355,7 +355,7 @@
     ).join('');
     const t = ((b.type || '').toLowerCase());
     const info = TYPE_BADGE[t] || { label: (b.type || '?').toUpperCase(), cls: 'bg-gray-600' };
-    const readHref = 'read.html?id=' + b.id + '&u=' + encodeURIComponent(b.url || '') + '&t=' + encodeURIComponent(b.title || '');
+    const readHref = 'read.html?id=' + b.id + '&u=' + encodeURIComponent(b.url || '') + '&t=' + encodeURIComponent(b.title || '') + (b.free ? '&free=1' : '');
     return '<div class="card relative block rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] hover:border-[#ff9500]/70 dark:hover:border-[#ff9500]/70 transition px-3 py-2.5 group cursor-pointer" data-read="' + readHref.replace(/"/g, '&quot;') + '">' +
       '<div class="flex items-start justify-between gap-2">' +
         '<h3 class="font-medium text-[14px] leading-snug text-gray-800 dark:text-gray-100 truncate min-w-0"><a href="' + readHref + '" class="hover:text-[#ff9500] dark:hover:text-[#ffb84d]">' + b.title + '</a></h3>' +
@@ -511,7 +511,7 @@
   function shelfItemHtml(b) {
     const r = getRating(b.id);
     const stars = [1, 2, 3, 4, 5].map(v => '<span class="' + (v <= r ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600') + '">★</span>').join('');
-    return '<a href="read.html?id=' + b.id + '&u=' + encodeURIComponent(b.url || '') + '&t=' + encodeURIComponent(b.title || '') + '" class="block py-1">' +
+    return '<a href="read.html?id=' + b.id + '&u=' + encodeURIComponent(b.url || '') + '&t=' + encodeURIComponent(b.title || '') + (b.free ? '&free=1' : '') + '" class="block py-1">' +
       '<div class="font-medium truncate text-gray-800 dark:text-gray-100">' + escapeHtml(b.title) + '</div>' +
       '<div class="text-xs mt-0.5">' + stars + '</div>' +
     '</a>';
