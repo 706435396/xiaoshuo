@@ -357,12 +357,16 @@
     ).join('');
     const t = ((b.type || '').toLowerCase());
     const info = TYPE_BADGE[t] || { label: (b.type || '?').toUpperCase(), cls: 'bg-gray-600' };
+    const vipBadge = b.free === true
+      ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white bg-emerald-500">免费</span>'
+      : '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white bg-[#ff9500]">会员</span>';
     const readHref = 'read.html?id=' + b.id + '&u=' + encodeURIComponent(b.url || '') + '&t=' + encodeURIComponent(b.title || '') + (b.free ? '&free=1' : '');
     return '<div class="card relative block rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] hover:border-[#ff9500]/70 dark:hover:border-[#ff9500]/70 transition px-3 py-2.5 group cursor-pointer" data-read="' + readHref.replace(/"/g, '&quot;') + '">' +
       '<div class="flex items-start justify-between gap-2">' +
         '<h3 class="font-medium text-[14px] leading-snug text-gray-800 dark:text-gray-100 truncate min-w-0"><a href="' + readHref + '" class="hover:text-[#ff9500] dark:hover:text-[#ffb84d]">' + b.title + '</a></h3>' +
         '<div class="flex items-center gap-1.5 shrink-0">' +
           '<button class="fav-btn w-6 h-6 rounded-full flex items-center justify-center text-xs ' + (fav ? 'bg-rose-500 text-white' : 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-400 hover:text-rose-400') + '" data-id="' + b.id + '" title="收藏">♥</button>' +
+          vipBadge +
           '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white ' + info.cls + '">' + info.label + '</span>' +
         '</div>' +
       '</div>' +
@@ -397,17 +401,17 @@
 
   // ---------- 分类（左侧侧栏：图片左侧模式 + 数量；移动端横滑同步） ----------
   // 固定分类体系（取自用户截图），顺序即展示顺序（用于随机推荐下拉等）
-  const FIXED_CATEGORIES = ['全部','都市激情','校园之恋','人妻熟女','家庭乱伦','经验故事','真实体验','猎奇另类','短篇笑话','古典武侠','91博客'];
+  const FIXED_CATEGORIES = ['全部','都市激情','校园之恋','人妻熟女','家庭乱伦','经验故事','真实体验','猎奇另类','短篇笑话','古典武侠','免费'];
   // 每个分类对应的 R2 缩略图 slug（tools/gen_cat_covers.py 生成，已上传到 cat/ 前缀）
   const CAT_IMG = {
     '全部':'all','都市激情':'dushi','校园之恋':'xiaoyuan','人妻熟女':'renqi',
     '家庭乱伦':'jiating','经验故事':'jingyan','真实体验':'zhenshi','猎奇另类':'lieqi',
-    '短篇笑话':'duanpian','古典武侠':'gudian','91博客':'blog91'
+    '短篇笑话':'duanpian','古典武侠':'gudian','免费':'free'
   };
   // 侧栏结构：都市激情 作为可展开父级，下面挂子分类（贴合截图）
   const CAT_TREE = [
     { name: '全部', type: 'all' },
-    { name: '都市激情', type: 'parent', children: ['校园之恋','人妻熟女','家庭乱伦','经验故事','真实体验','猎奇另类','短篇笑话','古典武侠','91博客'] }
+    { name: '都市激情', type: 'parent', children: ['校园之恋','人妻熟女','家庭乱伦','经验故事','真实体验','猎奇另类','短篇笑话','古典武侠','免费'] }
   ];
   let catExpanded = true; // 默认展开，贴合截图
 
@@ -422,6 +426,7 @@
   }
   function catCount(name) {
     if (name === '全部') return books.length;
+    if (name === '免费') return books.filter(b => b.free === true).length;
     return books.filter(b => b.category === name).length;
   }
   function catRow(name, isParent, expanded) {
@@ -472,7 +477,7 @@
   function applyFilter() {
     const term = searchTerm.trim().toLowerCase();
     filtered = books.filter(b => {
-      const matchCat = activeCategory === '全部' || b.category === activeCategory;
+      const matchCat = activeCategory === '全部' || (activeCategory === '免费' ? b.free === true : b.category === activeCategory);
       const matchTerm = !term || [b.title, b.author, b.category].some(v => (v || '').toLowerCase().includes(term));
       return matchCat && matchTerm;
     });
@@ -564,7 +569,8 @@
   // ---------- 随机推荐 ----------
   function pickRandom() {
     let pool = books;
-    if (randomCat !== '全部') pool = pool.filter(b => b.category === randomCat);
+    if (randomCat === '免费') pool = pool.filter(b => b.free === true);
+    else if (randomCat !== '全部') pool = pool.filter(b => b.category === randomCat);
     if (excludeRead) pool = pool.filter(b => !localStorage.getItem('ebook_progress_' + b.id));
     if (ratingFirst && pool.length > 4) {
       const sorted = pool.slice().sort((a, b) => getRating(b.id) - getRating(a.id));
