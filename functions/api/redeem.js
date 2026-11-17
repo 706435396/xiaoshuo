@@ -1,12 +1,12 @@
 // 京东E卡兑换提交 / 查询（用户登录后使用）
 // POST /api/redeem  body: { planDays, cardNo, cardPwd }
-//   → 卡号哈希去重、卡密加密落盘；自动模式直接核验开通，人工模式进入待审队列。
+//   → 卡号哈希去重、卡密加密落盘；提交即开通会员（active 待复核），后台判定无效再撤销。
 // GET  /api/redeem?id=xxx  → 查询自己某笔订单状态（仅脱敏信息，不含卡密）。
 import { json, sha256 } from './_shared.js';
 import {
   PLANS, normalizeCardNo, maskCardNo, encryptSecret,
   getOrderByHash, getOrderById, saveOrder, verifyCard,
-  grantVipDays, publicOrder, currentUser
+  grantVipDays, revokeVipDays, publicOrder, currentUser
 } from './_redeem_lib.js';
 import { scheduleNotify } from './_notify_lib.js';
 
@@ -49,44 +49,48 @@ export async function onRequestPost({ request, env, context }) {
   const enc = await encryptSecret(cardPwd, env);
   const mode = String(env.CARD_VERIFY_MODE || 'manual').toLowerCase() === 'auto' ? 'auto' : 'manual';
 
+  // 提交即开通：先发放会员并记录快照（供后台驳回时精确撤销）
+  const g = await grantVipDays(env, user, planDays);
+  if (!g.ok) return json({ error: '会员开通失败：' + g.error }, 500);
+
   const order = {
     id,
     hash,
     user,
     planDays,
     cardMask: maskCardNo(cardNo),
-    status: 'pending',
+    status: 'active', // 已自动开通，待后台复核；复核不通过则撤销
     created: Date.now(),
     mode,
-    encPwd: enc,
+    encPwd: enc, // 保留密文供后台复核；复核完成后销毁
+    grantBefore: g.grantBefore,
+    grantAfter: g.grantAfter,
+    vipUntil: g.vipUntil,
     note: ''
   };
 
-  // 核验适配器：自动模式可能直接改判 approved / rejected
-  const vr = await verifyCard(cardNo, cardPwd, env, mode);
-  if (vr.status === 'valid') {
-    const g = await grantVipDays(env, user, planDays);
-    if (g.ok) {
+  // 自动验卡模式：提交时即核验，无效则当场撤销 + 驳回
+  if (mode === 'auto') {
+    const vr = await verifyCard(cardNo, cardPwd, env, mode);
+    if (vr.status === 'valid') {
       order.status = 'approved';
-      order.vipUntil = g.vipUntil;
       order.note = '自动核验通过，已开通';
-      order.encPwd = null; // 核销后立即清除卡密密文
-    } else {
-      order.note = '核验通过但开通失败：' + g.error;
+      order.encPwd = null;
+    } else if (vr.status === 'invalid') {
+      const rv = await revokeVipDays(env, user, planDays, g.grantBefore, g.grantAfter);
+      order.status = 'rejected';
+      order.vipUntil = rv.vipUntil || null;
+      order.note = '自动核验未通过，已撤销：' + (vr.reason || '卡密无效');
+      order.encPwd = null;
+    } else if (vr.status === 'error') {
+      order.note = '自动核验接口异常，已开通并转人工复核：' + (vr.reason || '');
     }
-  } else if (vr.status === 'invalid') {
-    order.status = 'rejected';
-    order.note = '自动核验未通过：' + (vr.reason || '卡密无效');
-    order.encPwd = null;
-  } else if (vr.status === 'error') {
-    order.note = '自动核验接口异常，已转人工：' + (vr.reason || '');
   }
-  // pending：保持密文，等待管理员解密核验
 
   await saveOrder(env, order);
 
-  // 新订单通知：仅「待人工审核」时推送，自动开通/自动驳回的不打扰站长
-  if (order.status === 'pending' && order.mode === 'manual') {
+  // 新订单通知：仅「待人工复核」时推送，自动核验已判定的不打扰站长
+  if (order.status === 'active' && order.mode === 'manual') {
     scheduleNotify(context, env, order, { adminUrl: new URL('/vip', request.url).origin + '/vip' });
   }
 
@@ -97,6 +101,6 @@ export async function onRequestPost({ request, env, context }) {
       ? '兑换成功，会员已开通'
       : order.status === 'rejected'
         ? '卡密核验未通过'
-        : '已收到兑换申请，请保存订单号，审核通过后会员自动生效'
+        : '兑换成功，会员已生效；管理员将复核卡密，请勿重复提交'
   });
 }

@@ -46,7 +46,7 @@
 
 <div class="wrap" style="margin-top:8px;max-width:900px">
   <h1>京东E卡兑换审核</h1>
-  <div class="hint">人工核验模式：点「查看卡密」解密卡密，去京东/核验渠道确认为有效未使用后，点「通过」自动开通会员；无效则「驳回」。核销后卡密立即销毁。自动核验模式（CARD_VERIFY_MODE=auto）无需人工操作。</div>
+  <div class="hint">先开通后复核模式：用户提交卡号卡密后会员已自动生效，订单进入「待复核」。点「查看卡密」解密，去京东核验卡密是否有效未使用——有效则点「通过保留」，无效则点「驳回并撤销」（会回滚该用户本次会员天数）。处理完成后卡密密文立即销毁。</div>
   <div class="card">
     <label>管理员密钥（与上方相同）</label>
     <input id="admSecret" type="password" placeholder="ADMIN_SECRET" />
@@ -61,7 +61,7 @@
   .tbl th,.tbl td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
   .tbl th{color:var(--muted);font-weight:500}
   .badge{padding:1px 7px;border-radius:20px;font-size:11px;white-space:nowrap}
-  .b-pending{background:#3a2f10;color:#d8b96a}.b-approved{background:#123a22;color:#5ad48a}.b-rejected{background:#3a1414;color:#ff7a7a}
+  .b-active{background:#1c3350;color:#7ec0ff}.b-approved{background:#123a22;color:#5ad48a}.b-rejected{background:#3a1414;color:#ff7a7a}.b-pending{background:#3a2f10;color:#d8b96a}
   .ops button{margin:2px 4px 2px 0;width:auto;padding:5px 10px;font-size:12px}
   .ops .reject{background:#3a1414;color:#ff9a9a}
   .cardpwd{background:#000;padding:6px 10px;border-radius:6px;color:#ffb54d;font-family:monospace;letter-spacing:1px}
@@ -97,7 +97,20 @@
 
   // ===== 京东E卡兑换审核 =====
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
-  const badge = s => '<span class="badge b-' + s + '">' + ({ pending:'审核中',approved:'已开通',rejected:'已驳回' }[s] || s) + '</span>';
+  const badge = s => '<span class="badge b-' + s + '">' + ({ active:'待复核',approved:'已通过',rejected:'已撤销',pending:'待复核' }[s] || s) + '</span>';
+  // active=待复核(卡密可见,可通过对抗/驳回撤销)；approved=已通过(仅可再驳回撤销)；rejected=已撤销(无操作)
+  const reviewOps = o => {
+    const id = esc(o.id);
+    if (o.status === 'active' || o.status === 'pending') {
+      return '<button data-act="detail" data-id="' + id + '">查看卡密</button>' +
+        '<button data-act="approve" data-id="' + id + '">通过保留</button>' +
+        '<button class="reject" data-act="reject" data-id="' + id + '">驳回并撤销</button>';
+    }
+    if (o.status === 'approved') {
+      return '<button class="reject" data-act="reject" data-id="' + id + '">驳回并撤销</button>';
+    }
+    return o.vipUntil ? '已撤销 · 原至 ' + esc(o.vipUntil) : '已撤销';
+  };
 
   async function adm(body) {
     const secret = $('admSecret').value.trim();
@@ -133,11 +146,7 @@
     for (const o of data.orders) {
       html += '<tr><td><code>' + esc(o.id) + '</code></td><td>' + esc(o.user) + '</td><td>' + o.planDays + '天</td>' +
         '<td>' + esc(o.cardMask) + '</td><td>' + badge(o.status) + '</td><td>' + new Date(o.created).toLocaleString('zh-CN') + '</td>' +
-        '<td class="ops">' + (o.status === 'pending'
-          ? '<button data-act="detail" data-id="' + esc(o.id) + '">查看卡密</button>' +
-            '<button data-act="approve" data-id="' + esc(o.id) + '">通过</button>' +
-            '<button class="reject" data-act="reject" data-id="' + esc(o.id) + '">驳回</button>'
-          : (o.vipUntil ? '至 ' + esc(o.vipUntil) : '—')) + '</td></tr>';
+        '<td class="ops">' + reviewOps(o) + '</td></tr>';
     }
     html += '</table>';
     $('orderList').innerHTML = html;
@@ -152,19 +161,20 @@
       const d = await adm({ action: 'detail', id });
       btn.disabled = false;
       if (!d || d.error) { alert('❌ ' + (d && d.error || '失败')); return; }
-      alert('卡号：' + d.cardMask + '\n卡密：' + d.cardPwd + '\n\n请复制后到核验渠道确认，再点「通过」或「驳回」。');
+      alert('卡号：' + d.cardMask + '\n卡密：' + d.cardPwd + '\n\n请复制后到京东核验，有效点「通过保留」，无效点「驳回并撤销」。');
     } else if (act === 'approve') {
-      if (!confirm('确认核验通过并开通会员？')) return;
+      if (!confirm('确认卡密有效？将标记为已通过，会员继续保留。')) return;
       btn.disabled = true;
       const d = await adm({ action: 'approve', id });
-      if (d && d.ok) { $('admMsg').className = 'msg ok'; $('admMsg').textContent = '✅ 已开通：' + d.order.user; $('loadOrders').click(); }
+      if (d && d.ok) { $('admMsg').className = 'msg ok'; $('admMsg').textContent = '✅ 已通过复核，会员保留：' + d.order.user; $('loadOrders').click(); }
       else { alert('❌ ' + (d && d.error || '失败')); btn.disabled = false; }
     } else if (act === 'reject') {
-      const reason = prompt('驳回原因（可留空）：') ;
+      if (!confirm('⚠️ 确认卡密无效？\n\n这将【撤销该用户本次兑换的会员天数】。若该订单会员已到期或被其他操作改动，则按天数扣减。此操作不可撤销，请确认卡密确实无效。')) return;
+      const reason = prompt('驳回原因（可留空）：');
       if (reason === null) return;
       btn.disabled = true;
       const d = await adm({ action: 'reject', id, reason });
-      if (d && d.ok) { $('admMsg').className = 'msg warn'; $('admMsg').textContent = '已驳回订单 ' + id; $('loadOrders').click(); }
+      if (d && d.ok) { $('admMsg').className = 'msg warn'; $('admMsg').textContent = '✅ 已驳回并撤销会员：' + id; $('loadOrders').click(); }
       else { alert('❌ ' + (d && d.error || '失败')); btn.disabled = false; }
     }
   });

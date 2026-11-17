@@ -97,6 +97,7 @@ export async function listOrders(env) {
 }
 
 // ---------- 开通会员（与 /api/grant 相同的续费叠加语义）----------
+// 返回 grantBefore/grantAfter 供兑换订单记录，驳回时可精确回滚。
 export async function grantVipDays(env, name, days) {
   const u = await env.USER_DATA.get('user:' + name, { type: 'json' });
   if (!u) return { ok: false, error: '用户不存在：' + name };
@@ -105,7 +106,32 @@ export async function grantVipDays(env, name, days) {
   const vipExp = base + days * 24 * 3600 * 1000;
   u.vipExp = vipExp;
   await env.USER_DATA.put('user:' + name, JSON.stringify(u));
-  return { ok: true, vipExp, vipUntil: new Date(vipExp).toISOString().slice(0, 10) };
+  return {
+    ok: true, vipExp,
+    grantBefore: base,
+    grantAfter: vipExp,
+    vipUntil: new Date(vipExp).toISOString().slice(0, 10)
+  };
+}
+
+// ---------- 撤销会员天数（人工复核判定卡密无效时调用）----------
+// 精确回滚：若当前 vipExp 仍等于发放后的快照（用户期间未再续费），直接恢复发放前值；
+// 否则保守扣减 days 天且不低于 now（不误伤用户后续 legitimate 续费）。
+export async function revokeVipDays(env, name, days, grantBefore, grantAfter) {
+  const u = await env.USER_DATA.get('user:' + name, { type: 'json' });
+  if (!u) return { ok: false, error: '用户不存在：' + name };
+  const now = Date.now();
+  const day = 24 * 3600 * 1000;
+  let vipExp = Number(u.vipExp) || 0;
+  if (grantAfter != null && Math.abs(vipExp - grantAfter) < 1000) {
+    vipExp = Number(grantBefore) || 0; // 精确恢复发放前
+  } else {
+    vipExp = Math.max(0, vipExp - Number(days || 0) * day); // 保守扣减
+  }
+  if (vipExp < now) vipExp = 0; // 已过期则清零，等同无会员
+  u.vipExp = vipExp;
+  await env.USER_DATA.put('user:' + name, JSON.stringify(u));
+  return { ok: true, vipExp, vipUntil: vipExp > now ? new Date(vipExp).toISOString().slice(0, 10) : null };
 }
 
 // ---------- 验卡适配器（A 人工 / B 自动）----------

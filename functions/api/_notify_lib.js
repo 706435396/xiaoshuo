@@ -16,8 +16,8 @@ function fmtTime(ms) {
 export function buildMessage(order, opts = {}) {
   const title = opts.title || '🔔 深夜文库 · 新兑换订单';
   const adminUrl = opts.adminUrl || 'https://shenye.72tool.com/vip';
-  const planName = { 30: '月卡', 90: '季卡', 365: '年卡' }[order.planDays] || (order.planDays + '天');
-  const statusText = { pending: '待审核', approved: '已开通', rejected: '已驳回' }[order.status] || order.status;
+  const planName = { 365: '年卡' }[order.planDays] || (order.planDays + '天');
+  const statusText = { active: '已开通·待复核', pending: '待复核', approved: '已通过', rejected: '已驳回撤销' }[order.status] || order.status;
   const lines = [
     title,
     '',
@@ -28,9 +28,9 @@ export function buildMessage(order, opts = {}) {
     '状态：' + statusText,
     '时间：' + fmtTime(order.created || Date.now()),
     '',
-    '👉 点此登录后台核验并开通：' + adminUrl,
+    '会员已先行为用户开通。👉 请登录后台复核卡密：' + adminUrl,
     '',
-    '（出于安全，卡密不在通知中显示，请在后台点「查看卡密」解密）'
+    '（出于安全，卡密不在通知中显示，请在后台点「查看卡密」解密；无效卡请点「驳回」撤销会员）'
   ];
   return { title, text: lines.join('\n'), adminUrl, order };
 }
@@ -48,22 +48,24 @@ async function feishuSign(secret) {
 // 飞书卡片消息（带一键打开后台按钮）
 function feishuCard(msg) {
   const o = msg.order || {};
-  const planName = ({ 30: '月卡', 90: '季卡', 365: '年卡' })[o.planDays] || (o.planDays ? o.planDays + ' 天' : '—');
+  const planName = ({ 365: '年卡' })[o.planDays] || (o.planDays ? o.planDays + ' 天' : '—');
+  const statusText = { active: '已开通·待复核', approved: '已通过', rejected: '已驳回撤销' }[o.status] || '';
   const content = [
     '**订单号**：' + (o.id || '—'),
     '**用户**：' + (o.user || '—'),
     '**套餐**：' + planName,
     '**卡号**：' + (o.cardMask || '—'),
+    '**状态**：' + (statusText || '—'),
     '**时间**：' + fmtTime(o.created || Date.now())
   ].join('\n');
   const elements = [{ tag: 'div', text: { tag: 'lark_md', content } }];
   if (msg.adminUrl) {
     elements.push({
       tag: 'action',
-      actions: [{ tag: 'button', text: { tag: 'plain_text', content: '打开后台核验' }, url: msg.adminUrl, type: 'primary' }]
+      actions: [{ tag: 'button', text: { tag: 'plain_text', content: '打开后台复核' }, url: msg.adminUrl, type: 'primary' }]
     });
   }
-  elements.push({ tag: 'note', elements: [{ tag: 'plain_text', content: '卡密不在通知内显示，请在后台点「查看卡密」解密' }] });
+  elements.push({ tag: 'note', elements: [{ tag: 'plain_text', content: '会员已先行开通；卡密不在通知内显示，请在后台复核，无效卡点「驳回」撤销' }] });
   return { msg_type: 'interactive', card: { config: { wide_screen_mode: true }, header: { title: { tag: 'plain_text', content: msg.title }, template: 'orange' }, elements } };
 }
 

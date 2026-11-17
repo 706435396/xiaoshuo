@@ -44,7 +44,7 @@
 <body>
 <div class="wrap">
   <h1>京东E卡兑换会员</h1>
-  <p class="hint">用一张 <b style="color:var(--orange)">10 元面值</b> 京东E卡，兑换深夜文库 <b style="color:var(--orange)">年卡会员（365 天）</b>。请先登录，填写卡号卡密提交；卡密加密存储，核验通过后会员自动生效。</p>
+  <p class="hint">用一张 <b style="color:var(--orange)">10 元面值</b> 京东E卡，兑换深夜文库 <b style="color:var(--orange)">年卡会员（365 天）</b>。填写卡号卡密提交后<b style="color:#5ad48a">会员立即生效</b>，可马上畅读；管理员会在后台复核卡密。</p>
 
   <div class="card" id="loginCard" style="display:none">
     <div class="msg err">你尚未登录。请先<a href="/read.html">登录账号</a>后再兑换，会员将开通到你的账号。</div>
@@ -60,11 +60,11 @@
       </div>
       <div class="p-badge">10 元 E 卡 × 1</div>
     </div>
-    <label>京东E卡卡号</label>
+    <label>京东E卡卡号（16 位）</label>
     <input id="cardNo" type="text" placeholder="16 位卡号，空格/横线可省略" autocomplete="off" />
     <label>京东E卡卡密</label>
     <input id="cardPwd" type="password" placeholder="卡密" autocomplete="off" />
-    <button id="btn">提交兑换</button>
+    <button id="btn">提交兑换 · 立即生效</button>
     <div class="msg" id="msg"></div>
   </div>
 
@@ -82,8 +82,8 @@
     <ol class="steps">
       <li>上方链接下单，拍下后自动发卡，记下 <b>16 位卡号</b> 和 <b>卡密</b>。</li>
       <li>回到本站，<b>先登录</b>你的账号（会员会开通到该账号）。</li>
-      <li>填入卡号、卡密，点「提交兑换」，<b>保存好订单号</b>。</li>
-      <li>站长核验卡密后，会员通常在 1 个工作日内自动生效，可用订单号查询进度。</li>
+      <li>填入卡号、卡密，点「提交兑换」，<b>会员立即生效，可直接去阅读</b>。</li>
+      <li>管理员会在后台复核卡密；若为无效卡，将<b>撤销本次会员权限</b>，请提交有效卡。</li>
     </ol>
     <div class="tao" style="border-color:#4a3808;color:#d8b96a">提示：京东E卡需为 <b>10 元面值、未绑定</b> 的有效卡；一旦在京东 APP 绑卡即锁死，无法兑换。请通过正规渠道购买，谨防诈骗。</div>
   </div>
@@ -96,8 +96,8 @@
   </div>
 
   <div class="foot">
-    当前为<b>人工核验</b>模式：提交后请保存订单号，我们核验卡密后会员自动生效，通常 1 个工作日内处理。<br />
-    请勿重复提交同一张卡；卡密仅用于核验，核验完成后即刻销毁。<br />
+    提交后会员<b>立即生效</b>，无需等待；管理员会在后台复核卡密，若判定为无效卡，将撤销本次会员权限。<br />
+    请勿重复提交同一张卡；卡密加密存储，仅用于后台核验，处理完成后即刻销毁。<br />
     <a href="/vip-info">会员权益说明</a> · <a href="/">返回首页</a>
   </div>
 </div>
@@ -128,7 +128,7 @@
   })();
 
   function statusHtml(s) {
-    const map = { pending: ['审核中', 'st-pending'], approved: ['已开通', 'st-approved'], rejected: ['未通过', 'st-rejected'] };
+    const map = { active: ['已生效·待复核', 'st-approved'], approved: ['已通过', 'st-approved'], rejected: ['已撤销', 'st-rejected'], pending: ['待复核', 'st-pending'] };
     const m = map[s] || [s, 'st-pending'];
     return '<span class="status ' + m[1] + '">' + m[0] + '</span>';
   }
@@ -149,7 +149,7 @@
       if (res.ok && data.ok) {
         $('msg').className = 'msg ok';
         $('msg').innerHTML = '✅ ' + data.message + '<br />订单号：<code>' + data.order.id + '</code>　状态：' + statusHtml(data.order.status) +
-          '<br />请保存订单号以便查询。';
+          '<br /><a href="/" style="font-weight:600">会员已生效，去选书阅读 →</a>';
         $('cardNo').value = ''; $('cardPwd').value = '';
       } else {
         $('msg').className = 'msg err';

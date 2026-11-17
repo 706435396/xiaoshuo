@@ -2,13 +2,13 @@
 // POST /api/redeem-admin  body: { action, secret, ... }
 //   action=list     → 列出全部兑换订单（脱敏，不含卡密）
 //   action=detail   → body.id，解密返回卡密（仅管理员，用于人工核验）
-//   action=approve  → body.id，核验通过后开通会员 + 清除卡密密文
-//   action=reject   → body.id, reason，驳回 + 清除卡密密文
+//   action=approve  → body.id，复核通过：会员已生效，仅标记通过 + 销毁卡密密文
+//   action=reject   → body.id, reason，复核不通过：撤销会员权限 + 销毁卡密密文（幂等）
 //   action=testNotify → 发送一条测试通知，验证渠道配置是否生效
 import { json } from './_shared.js';
 import {
   adminOk, listOrders, getOrderById, decryptSecret,
-  grantVipDays, publicOrder, saveOrder
+  revokeVipDays, publicOrder, saveOrder
 } from './_redeem_lib.js';
 import { notifyNewOrder } from './_notify_lib.js';
 
@@ -29,7 +29,7 @@ export async function onRequestPost({ request, env }) {
       user: '测试用户',
       planDays: 365,
       cardMask: '1234****5678',
-      status: 'pending',
+      status: 'active',
       created: Date.now()
     }, { title: '🔔 深夜文库 · 通知测试', adminUrl: new URL('/vip', request.url).origin + '/vip' });
     if (!sent.length) return json({ error: '未配置任何通知渠道（请检查 TG/Server酱/邮件/Webhook 环境变量）' }, 400);
@@ -52,25 +52,33 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (action === 'approve') {
-    if (o.status === 'approved') return json({ error: '该订单已处理，请勿重复开通' }, 409);
-    if (!o.encPwd && o.status !== 'pending') return json({ error: '该订单状态异常，无法开通' }, 409);
-    const g = await grantVipDays(env, o.user, o.planDays);
-    if (!g.ok) return json({ error: g.error }, 404);
+    if (o.status === 'approved') return json({ error: '该订单已通过，请勿重复处理' }, 409);
+    if (o.status === 'rejected') return json({ error: '该订单已驳回撤销，无法再通过' }, 409);
+    if (!o.encPwd && o.status !== 'active') return json({ error: '该订单状态异常，无法复核' }, 409);
+    // 会员在提交时已开通，此处只标记复核通过并销毁卡密，不再重复发放天数
     o.status = 'approved';
-    o.vipUntil = g.vipUntil;
-    o.note = (o.note ? o.note + '；' : '') + '人工核验通过，已开通';
+    o.note = (o.note ? o.note + '；' : '') + '人工复核通过，会员保留';
     o.encPwd = null;
     o.reviewedAt = Date.now();
     await saveOrder(env, o);
     return json({ ok: true, order: publicOrder(o) });
   }
 
-  // reject
+  // reject：复核不通过，撤销提交时发放的会员权限（幂等）
+  if (o.status === 'rejected') return json({ error: '该订单已撤销，请勿重复处理' }, 409);
   const reason = String(body.reason || '').trim();
+  let revoked = null;
+  if (o.status === 'active' || o.status === 'approved') {
+    // 会员可能已生效：按订单快照撤销对应天数
+    const rv = await revokeVipDays(env, o.user, o.planDays, o.grantBefore, o.grantAfter);
+    if (!rv.ok) return json({ error: '撤销会员失败：' + rv.error }, 404);
+    revoked = rv;
+    o.vipUntil = rv.vipUntil || null;
+  }
   o.status = 'rejected';
-  o.note = (o.note ? o.note + '；' : '') + (reason ? '驳回：' + reason : '人工核验未通过');
+  o.note = (o.note ? o.note + '；' : '') + (reason ? '复核未通过：' + reason + '，已撤销会员' : '复核未通过，已撤销会员');
   o.encPwd = null;
   o.reviewedAt = Date.now();
   await saveOrder(env, o);
-  return json({ ok: true, order: publicOrder(o) });
+  return json({ ok: true, order: publicOrder(o), revoked });
 }
