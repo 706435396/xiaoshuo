@@ -275,7 +275,8 @@
     const name = $('authUser').value.trim(), pwd = $('authPwd').value;
     if (!name || !pwd) { $('authMsg').textContent = '请输入用户名和密码'; return; }
     $('authSubmit').disabled = true;
-    const r = await apiCall('/' + authMode, { method: 'POST', body: JSON.stringify({ username: name, password: pwd }) });
+    const endpoint = authMode === 'reg' ? '/register' : '/login';
+    const r = await apiCall(endpoint, { method: 'POST', body: JSON.stringify({ username: name, password: pwd }) });
     $('authSubmit').disabled = false;
     if (r.ok) { closeAuth(); onAuthed(r.data.token, r.data.username); }
     else $('authMsg').textContent = r.data.error || '操作失败';

@@ -2,7 +2,8 @@
 // 设计原则：卡密不明文落盘；只有持管理员密钥者能解密查看；核销后立即清除密文。
 import { getSession } from './_shared.js';
 
-const DEFAULT_SECRET = 'shenye-card-2026';
+// 默认管理密钥：与 grant.js 保持一致。线上由 CF Pages 环境变量 ADMIN_SECRET 覆盖。
+const DEFAULT_SECRET = 'shenye-vip-2026';
 
 export const PLANS = [
   { days: 30,  name: '月卡', label: '30 天' },
