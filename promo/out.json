@@ -1,52 +1,52 @@
 {
-  "generatedAt": "2026-11-16T21:27:50.757Z",
-  "dayKey": "2026-11-16",
+  "generatedAt": "2026-11-17T11:23:23.877Z",
+  "dayKey": "2026-11-17",
   "site": "https://shenye.72tool.com",
   "filterStats": {
     "total": 1503,
-    "byCategory": 83,
+    "byCategory": 82,
     "byTitle": 3,
     "byBody": 0,
     "byTest": 3,
-    "kept": 1414
+    "kept": 1415
   },
   "books": [
     {
-      "id": 1402,
-      "title": "都市美妇（都市艳妇）",
-      "author": "",
-      "category": "人妻熟女",
-      "bookUrl": "https://shenye.72tool.com/book/1402",
-      "firstChapterUrl": "https://shenye.72tool.com/chapter/1402/1",
-      "blurb": "人妻熟女题材，深夜文库提供完整章节目录与免费在线试读"
+      "id": 10,
+      "title": "《不伦的爱情》（全本）",
+      "author": "733",
+      "category": "都市激情",
+      "bookUrl": "https://shenye.72tool.com/book/10",
+      "firstChapterUrl": "https://shenye.72tool.com/chapter/10/1",
+      "blurb": "733 著，都市激情题材，深夜文库提供完整章节目录与免费在线试读"
     },
     {
-      "id": 1363,
-      "title": "贱妇",
+      "id": 475,
+      "title": "儿媳妇",
       "author": "",
       "category": "都市激情",
-      "bookUrl": "https://shenye.72tool.com/book/1363",
-      "firstChapterUrl": "https://shenye.72tool.com/chapter/1363/1",
+      "bookUrl": "https://shenye.72tool.com/book/475",
+      "firstChapterUrl": "https://shenye.72tool.com/chapter/475/1",
       "blurb": "都市激情题材，深夜文库提供完整章节目录与免费在线试读"
     },
     {
-      "id": 480,
-      "title": "公司女人都是我的",
+      "id": 937,
+      "title": "操在世界末日（1-2卷42章）-太空猴子",
       "author": "",
-      "category": "真实体验",
-      "bookUrl": "https://shenye.72tool.com/book/480",
-      "firstChapterUrl": "https://shenye.72tool.com/chapter/480/1",
-      "blurb": "真实体验题材，深夜文库提供完整章节目录与免费在线试读"
+      "category": "都市激情",
+      "bookUrl": "https://shenye.72tool.com/book/937",
+      "firstChapterUrl": "https://shenye.72tool.com/chapter/937/1",
+      "blurb": "都市激情题材，深夜文库提供完整章节目录与免费在线试读"
     }
   ],
   "indexnowUrls": [
     "https://shenye.72tool.com/",
     "https://shenye.72tool.com/sitemap-main.xml",
-    "https://shenye.72tool.com/book/1402",
-    "https://shenye.72tool.com/chapter/1402/1",
-    "https://shenye.72tool.com/book/1363",
-    "https://shenye.72tool.com/chapter/1363/1",
-    "https://shenye.72tool.com/book/480",
-    "https://shenye.72tool.com/chapter/480/1"
+    "https://shenye.72tool.com/book/10",
+    "https://shenye.72tool.com/chapter/10/1",
+    "https://shenye.72tool.com/book/475",
+    "https://shenye.72tool.com/chapter/475/1",
+    "https://shenye.72tool.com/book/937",
+    "https://shenye.72tool.com/chapter/937/1"
   ]
 }
