@@ -250,14 +250,15 @@
     updateAuthUI();
     syncPull().then(syncPush);
   }
-  function logout() {
+  async function logout() {
+    try { await apiCall('/logout', { method: 'POST' }); } catch (e) {}
     localStorage.removeItem(AUTH_KEY); localStorage.removeItem(USER_KEY);
     updateAuthUI();
   }
   function updateAuthUI() {
     const b = $('authBtn'); if (!b) return;
     const u = getCurUser();
-    const lab = $('authLabel'); if (lab) lab.textContent = u ? (u + ' · 退出') : '登录';
+    const lab = $('authLabel'); if (lab) lab.textContent = u ? (u + ' ▾') : '登录';
   }
   let authMode = 'login';
   function switchAuthTab(mode) {
@@ -281,7 +282,7 @@
     if (r.ok) { closeAuth(); onAuthed(r.data.token, r.data.username); }
     else $('authMsg').textContent = r.data.error || '操作失败';
   }
-  $('authBtn').addEventListener('click', () => { if (getCurUser()) logout(); else openAuth('login'); });
+  $('authBtn').addEventListener('click', () => { if (getCurUser()) location.href = '/profile'; else openAuth('login'); });
   $('authClose').addEventListener('click', closeAuth);
   $('authModal').addEventListener('click', (e) => { if (e.target === $('authModal')) closeAuth(); });
   $('tabLogin').addEventListener('click', () => switchAuthTab('login'));

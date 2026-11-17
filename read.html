@@ -180,10 +180,14 @@
     updateAuthUI(); syncPull();
     refreshMember().then(() => { if (typeof window.__onMemberChange === 'function') window.__onMemberChange(); });
   }
-  function logout() { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(USER_KEY); isMember = false; updateAuthUI(); if (typeof window.__onMemberChange === 'function') window.__onMemberChange(); }
+  async function logout() {
+    try { await apiCall('/logout', { method: 'POST' }); } catch (e) {}
+    localStorage.removeItem(AUTH_KEY); localStorage.removeItem(USER_KEY); isMember = false; updateAuthUI();
+    if (typeof window.__onMemberChange === 'function') window.__onMemberChange();
+  }
   function updateAuthUI() {
     const b = $('authBtn'); if (!b) return;
-    b.textContent = getCurUser() ? (getCurUser() + ' · 退出') : '登录';
+    b.textContent = getCurUser() ? (getCurUser() + ' ▾') : '登录';
     const vip = $('vipBtn'); if (vip) vip.textContent = isMember ? '★ 会员' : '开通会员';
   }
   let authMode = 'login';
@@ -208,7 +212,7 @@
     if (r.ok) { closeAuth(); onAuthed(r.data.token, r.data.username); }
     else $('authMsg').textContent = r.data.error || '操作失败';
   }
-  $('authBtn').addEventListener('click', () => { if (getCurUser()) logout(); else openAuth('login'); });
+  $('authBtn').addEventListener('click', () => { if (getCurUser()) location.href = '/profile'; else openAuth('login'); });
   $('vipBtn').addEventListener('click', () => { location.href = '/redeem'; });
   $('authClose').addEventListener('click', closeAuth);
   $('authModal').addEventListener('click', (e) => { if (e.target === $('authModal')) closeAuth(); });
