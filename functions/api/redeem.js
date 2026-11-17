@@ -31,7 +31,7 @@ export async function onRequestPost({ request, env, context }) {
   try { body = await request.json(); } catch { return json({ error: '请求格式错误' }, 400); }
 
   const planDays = Number(body.planDays);
-  if (!VALID_DAYS.includes(planDays)) return json({ error: '套餐无效，请选择月卡/季卡/年卡' }, 400);
+  if (!VALID_DAYS.includes(planDays)) return json({ error: '套餐无效，本站仅提供年卡（365 天）兑换' }, 400);
 
   const cardNo = normalizeCardNo(body.cardNo);
   const cardPwd = String(body.cardPwd || '').replace(/\s/g, '');

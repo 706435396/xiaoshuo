@@ -27,7 +27,7 @@ export async function onRequestPost({ request, env }) {
     const sent = await notifyNewOrder(env, {
       id: 'TEST' + Date.now().toString(36).toUpperCase(),
       user: '测试用户',
-      planDays: 30,
+      planDays: 365,
       cardMask: '1234****5678',
       status: 'pending',
       created: Date.now()
