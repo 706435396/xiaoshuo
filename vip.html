@@ -43,6 +43,29 @@
     <a href="/">返回首页</a>
   </div>
 </div>
+
+<div class="wrap" style="margin-top:8px;max-width:900px">
+  <h1>京东E卡兑换审核</h1>
+  <div class="hint">人工核验模式：点「查看卡密」解密卡密，去京东/核验渠道确认为有效未使用后，点「通过」自动开通会员；无效则「驳回」。核销后卡密立即销毁。自动核验模式（CARD_VERIFY_MODE=auto）无需人工操作。</div>
+  <div class="card">
+    <label>管理员密钥（与上方相同）</label>
+    <input id="admSecret" type="password" placeholder="ADMIN_SECRET" />
+    <button id="loadOrders" style="margin-top:14px">加载订单列表</button>
+    <button id="testNotify" style="margin-top:10px;background:#2a2a2a;color:var(--fg);border:1px solid var(--line)">发送测试通知</button>
+    <div class="msg" id="admMsg"></div>
+    <div id="orderList" style="margin-top:16px"></div>
+  </div>
+</div>
+<style>
+  .tbl{width:100%;border-collapse:collapse;font-size:12px}
+  .tbl th,.tbl td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+  .tbl th{color:var(--muted);font-weight:500}
+  .badge{padding:1px 7px;border-radius:20px;font-size:11px;white-space:nowrap}
+  .b-pending{background:#3a2f10;color:#d8b96a}.b-approved{background:#123a22;color:#5ad48a}.b-rejected{background:#3a1414;color:#ff7a7a}
+  .ops button{margin:2px 4px 2px 0;width:auto;padding:5px 10px;font-size:12px}
+  .ops .reject{background:#3a1414;color:#ff9a9a}
+  .cardpwd{background:#000;padding:6px 10px;border-radius:6px;color:#ffb54d;font-family:monospace;letter-spacing:1px}
+</style>
 <script>
   const $ = id => document.getElementById(id);
   $('btn').addEventListener('click', async () => {
@@ -70,6 +93,80 @@
       $('msg').className = 'msg err'; $('msg').textContent = '网络错误：' + e.message;
     }
     $('btn').disabled = false;
+  });
+
+  // ===== 京东E卡兑换审核 =====
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+  const badge = s => '<span class="badge b-' + s + '">' + ({ pending:'审核中',approved:'已开通',rejected:'已驳回' }[s] || s) + '</span>';
+
+  async function adm(body) {
+    const secret = $('admSecret').value.trim();
+    if (!secret) { $('admMsg').className = 'msg err'; $('admMsg').textContent = '请填写管理员密钥'; return null; }
+    const res = await fetch('/api/redeem-admin', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...body, secret })
+    });
+    return res.json().catch(() => ({}));
+  }
+
+  $('testNotify').addEventListener('click', async () => {
+    $('testNotify').disabled = true;
+    $('admMsg').className = 'msg'; $('admMsg').textContent = '发送中…';
+    const d = await adm({ action: 'testNotify' });
+    if (!d) { $('testNotify').disabled = false; return; }
+    if (d.ok) { $('admMsg').className = 'msg ok'; $('admMsg').textContent = '✅ 测试通知已推送：' + (d.sent || []).join(', '); }
+    else { $('admMsg').className = 'msg err'; $('admMsg').textContent = '❌ ' + (d.error || '发送失败'); }
+    $('testNotify').disabled = false;
+  });
+
+  $('loadOrders').addEventListener('click', async () => {
+    $('loadOrders').disabled = true;
+    $('admMsg').className = 'msg'; $('admMsg').textContent = '加载中…';
+    const data = await adm({ action: 'list' });
+    $('loadOrders').disabled = false;
+    if (!data) return;
+    if (!data.orders) { $('admMsg').className = 'msg err'; $('admMsg').textContent = '❌ ' + (data.error || '加载失败'); return; }
+    $('admMsg').className = 'msg ok'; $('admMsg').textContent = '共 ' + data.orders.length + ' 笔订单';
+    if (!data.orders.length) { $('orderList').innerHTML = '<div class="hint">暂无订单</div>'; return; }
+    let html = '<table class="tbl"><tr><th>订单号</th><th>用户</th><th>套餐</th><th>卡号</th><th>状态</th><th>提交时间</th><th>操作</th></tr>';
+    for (const o of data.orders) {
+      html += '<tr><td><code>' + esc(o.id) + '</code></td><td>' + esc(o.user) + '</td><td>' + o.planDays + '天</td>' +
+        '<td>' + esc(o.cardMask) + '</td><td>' + badge(o.status) + '</td><td>' + new Date(o.created).toLocaleString('zh-CN') + '</td>' +
+        '<td class="ops">' + (o.status === 'pending'
+          ? '<button data-act="detail" data-id="' + esc(o.id) + '">查看卡密</button>' +
+            '<button data-act="approve" data-id="' + esc(o.id) + '">通过</button>' +
+            '<button class="reject" data-act="reject" data-id="' + esc(o.id) + '">驳回</button>'
+          : (o.vipUntil ? '至 ' + esc(o.vipUntil) : '—')) + '</td></tr>';
+    }
+    html += '</table>';
+    $('orderList').innerHTML = html;
+  });
+
+  $('orderList').addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const act = btn.dataset.act, id = btn.dataset.id;
+    if (act === 'detail') {
+      btn.disabled = true;
+      const d = await adm({ action: 'detail', id });
+      btn.disabled = false;
+      if (!d || d.error) { alert('❌ ' + (d && d.error || '失败')); return; }
+      alert('卡号：' + d.cardMask + '\n卡密：' + d.cardPwd + '\n\n请复制后到核验渠道确认，再点「通过」或「驳回」。');
+    } else if (act === 'approve') {
+      if (!confirm('确认核验通过并开通会员？')) return;
+      btn.disabled = true;
+      const d = await adm({ action: 'approve', id });
+      if (d && d.ok) { $('admMsg').className = 'msg ok'; $('admMsg').textContent = '✅ 已开通：' + d.order.user; $('loadOrders').click(); }
+      else { alert('❌ ' + (d && d.error || '失败')); btn.disabled = false; }
+    } else if (act === 'reject') {
+      const reason = prompt('驳回原因（可留空）：') ;
+      if (reason === null) return;
+      btn.disabled = true;
+      const d = await adm({ action: 'reject', id, reason });
+      if (d && d.ok) { $('admMsg').className = 'msg warn'; $('admMsg').textContent = '已驳回订单 ' + id; $('loadOrders').click(); }
+      else { alert('❌ ' + (d && d.error || '失败')); btn.disabled = false; }
+    }
   });
 </script>
 </body>

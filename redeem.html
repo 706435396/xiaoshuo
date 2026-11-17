@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex,nofollow" />
+<meta name="rating" content="adult" />
+<title>京东E卡兑换会员 | 深夜文库</title>
+<style>
+  :root{--bg:#0d0d0d;--card:#161616;--fg:#e5e5e5;--muted:#9a9a9a;--orange:#ff9500;--line:#262626}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7}
+  .wrap{max-width:520px;margin:48px auto;padding:0 20px 60px}
+  h1{font-size:22px;margin:0 0 6px}
+  .hint{color:var(--muted);font-size:13px;margin-bottom:24px;line-height:1.8}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:16px}
+  label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+  input,select{width:100%;background:#0a0a0a;border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:11px 12px;font-size:14px;outline:none}
+  input:focus,select:focus{border-color:var(--orange)}
+  button{margin-top:20px;width:100%;background:var(--orange);color:#111;border:0;border-radius:8px;padding:12px;font-size:15px;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.5;cursor:default}
+  .msg{margin-top:16px;font-size:13px;min-height:20px;line-height:1.8}
+  .ok{color:#5ad48a}.err{color:#ff7a7a}.warn{color:#d8b96a}
+  a{color:var(--orange)}
+  .plans{display:flex;gap:8px;margin-top:6px}
+  .plan{flex:1;text-align:center;border:1px solid var(--line);border-radius:8px;padding:12px 4px;cursor:pointer;font-size:13px;background:#0a0a0a}
+  .plan.sel{border-color:var(--orange);background:#241a08;color:var(--orange)}
+  .plan b{display:block;font-size:16px;margin-bottom:2px}
+  .foot{margin-top:24px;font-size:12px;color:#666;line-height:1.9}
+  .status{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px}
+  .st-pending{background:#3a2f10;color:#d8b96a}.st-approved{background:#123a22;color:#5ad48a}.st-rejected{background:#3a1414;color:#ff7a7a}
+  code{background:#000;padding:1px 6px;border-radius:4px;color:#ffb54d}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>京东E卡兑换会员</h1>
+  <p class="hint">用闲置的京东E卡兑换深夜文库会员。请先登录，填写卡号卡密并选择套餐提交；卡密经加密存储，核验通过后会员自动生效。</p>
+
+  <div class="card" id="loginCard" style="display:none">
+    <div class="msg err">你尚未登录。请先<a href="/read.html">登录账号</a>后再兑换，会员将开通到你的账号。</div>
+    <a href="/read.html"><button type="button">去登录</button></a>
+  </div>
+
+  <div class="card" id="formCard">
+    <label>选择套餐</label>
+    <div class="plans" id="plans">
+      <div class="plan sel" data-days="30"><b>月卡</b>30 天</div>
+      <div class="plan" data-days="90"><b>季卡</b>90 天</div>
+      <div class="plan" data-days="365"><b>年卡</b>365 天</div>
+    </div>
+    <label>京东E卡卡号</label>
+    <input id="cardNo" type="text" placeholder="16 位卡号，空格/横线可省略" autocomplete="off" />
+    <label>京东E卡卡密</label>
+    <input id="cardPwd" type="password" placeholder="卡密" autocomplete="off" />
+    <button id="btn">提交兑换</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card">
+    <label style="margin-top:0">查询已有订单</label>
+    <input id="queryId" type="text" placeholder="输入订单号，如 JDXXXX" />
+    <button id="queryBtn" style="margin-top:12px">查询状态</button>
+    <div class="msg" id="queryMsg"></div>
+  </div>
+
+  <div class="foot">
+    当前为<b>人工核验</b>模式：提交后请保存订单号，我们核验卡密后会员自动生效，通常 1 个工作日内处理。<br />
+    请勿重复提交同一张卡；卡密仅用于核验，核验完成后即刻销毁。<br />
+    <a href="/vip-info">会员权益说明</a> · <a href="/">返回首页</a>
+  </div>
+</div>
+<script>
+  const $ = id => document.getElementById(id);
+  let days = 30;
+
+  // 选择套餐
+  document.querySelectorAll('.plan').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.plan').forEach(x => x.classList.remove('sel'));
+      el.classList.add('sel');
+      days = Number(el.dataset.days);
+    });
+  });
+
+  // 先确认登录状态
+  (async () => {
+    try {
+      const res = await fetch('/api/me');
+      if (!res.ok) { $('loginCard').style.display = 'block'; $('formCard').style.display = 'none'; }
+    } catch { /* 网络异常时仍允许提交，由后端再次校验 */ }
+  })();
+
+  function statusHtml(s) {
+    const map = { pending: ['审核中', 'st-pending'], approved: ['已开通', 'st-approved'], rejected: ['未通过', 'st-rejected'] };
+    const m = map[s] || [s, 'st-pending'];
+    return '<span class="status ' + m[1] + '">' + m[0] + '</span>';
+  }
+
+  $('btn').addEventListener('click', async () => {
+    const cardNo = $('cardNo').value.trim();
+    const cardPwd = $('cardPwd').value.trim();
+    if (!cardNo || !cardPwd) { $('msg').className = 'msg err'; $('msg').textContent = '请填写卡号和卡密'; return; }
+    $('btn').disabled = true;
+    $('msg').className = 'msg'; $('msg').textContent = '提交中…';
+    try {
+      const res = await fetch('/api/redeem', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ planDays: days, cardNo, cardPwd })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        $('msg').className = 'msg ok';
+        $('msg').innerHTML = '✅ ' + data.message + '<br />订单号：<code>' + data.order.id + '</code>　状态：' + statusHtml(data.order.status) +
+          '<br />请保存订单号以便查询。';
+        $('cardNo').value = ''; $('cardPwd').value = '';
+      } else {
+        $('msg').className = 'msg err';
+        $('msg').textContent = '❌ ' + (data.error || ('失败 HTTP ' + res.status));
+      }
+    } catch (e) {
+      $('msg').className = 'msg err'; $('msg').textContent = '网络错误：' + e.message;
+    }
+    $('btn').disabled = false;
+  });
+
+  $('queryBtn').addEventListener('click', async () => {
+    const id = $('queryId').value.trim();
+    if (!id) { $('queryMsg').className = 'msg err'; $('queryMsg').textContent = '请输入订单号'; return; }
+    $('queryMsg').className = 'msg'; $('queryMsg').textContent = '查询中…';
+    try {
+      const res = await fetch('/api/redeem?id=' + encodeURIComponent(id));
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        const o = data.order;
+        $('queryMsg').className = 'msg ok';
+        $('queryMsg').innerHTML = '订单 <code>' + o.id + '</code>　' + statusHtml(o.status) +
+          '<br />套餐：' + o.planDays + ' 天　卡号：' + o.cardMask +
+          (o.vipUntil ? '　会员至：' + o.vipUntil : '') + (o.note ? '<br />备注：' + o.note : '');
+      } else {
+        $('queryMsg').className = 'msg err'; $('queryMsg').textContent = '❌ ' + (data.error || '查询失败');
+      }
+    } catch (e) {
+      $('queryMsg').className = 'msg err'; $('queryMsg').textContent = '网络错误：' + e.message;
+    }
+  });
+</script>
+</body>
+</html>

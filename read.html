@@ -208,7 +208,7 @@
     else $('authMsg').textContent = r.data.error || '操作失败';
   }
   $('authBtn').addEventListener('click', () => { if (getCurUser()) logout(); else openAuth('login'); });
-  $('vipBtn').addEventListener('click', () => { location.href = '/vip-info'; });
+  $('vipBtn').addEventListener('click', () => { location.href = '/redeem'; });
   $('authClose').addEventListener('click', closeAuth);
   $('authModal').addEventListener('click', (e) => { if (e.target === $('authModal')) closeAuth(); });
   $('tabLogin').addEventListener('click', () => switchAuthTab('login'));
