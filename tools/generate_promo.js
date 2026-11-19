@@ -108,8 +108,12 @@ function main() {
 
   const now = new Date();
   const dayKey = now.toISOString().slice(0, 10); // UTC 日期，同一天多次运行结果一致
-  const count = Math.min(3, candidates.length);
-  const picked = pickDaily(candidates, dayKey, count);
+  // 首页推荐位只放 3 本（UI 不变）；推送批次独立放大到 PUSH_COUNT。
+  // pushPicked 的前 3 本直接作为首页推荐，保证推荐书一定被推送。
+  const PICK_COUNT = 3;
+  const PUSH_COUNT = 30;
+  const pushPicked = pickDaily(candidates, dayKey, Math.min(PUSH_COUNT, candidates.length));
+  const picked = pushPicked.slice(0, Math.min(PICK_COUNT, pushPicked.length));
 
   const outBooks = picked.map(b => ({
     id: b.id,
@@ -121,10 +125,11 @@ function main() {
     blurb: blurb(b)
   }));
 
-  // IndexNow 只推少量高价值 URL，不做 11 万章全量推送
+  // IndexNow：每天推送 PUSH_COUNT 本书的书页 + 首章（约 60 条），不做 11 万章全量推送。
+  // 全站其余 URL 依赖已提交的 sitemap 由 Bing 自行抓取。
   const indexnowUrls = [SITE + '/', SITE + '/sitemap-main.xml'];
-  for (const b of outBooks) {
-    indexnowUrls.push(b.bookUrl, b.firstChapterUrl);
+  for (const b of pushPicked) {
+    indexnowUrls.push(`${SITE}/book/${b.id}`, `${SITE}/chapter/${b.id}/1`);
   }
 
   const result = {
