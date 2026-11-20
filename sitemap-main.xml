@@ -66,11 +66,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://shenye.72tool.com/category/blog91</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://shenye.72tool.com/book/1</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>

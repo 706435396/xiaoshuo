@@ -235,6 +235,25 @@ function bookPageHtml(book, preview, chData) {
   };
   if (preview && preview.chapterCount) jsonLd.numberOfPages = preview.chapterCount;
 
+  // Open Graph / Twitter Card —— 社交平台分享卡片（Bluesky/Mastodon/微信/X 等抓这些标签）
+  const pageUrl = SITE + '/book/' + id;
+  const coverUrl = book.cover ? (R2_BASE + String(book.cover).replace(/^\/+/, '')) : (R2_BASE + 'cat/all.jpg');
+  const ogTags = [
+    '<meta property="og:type" content="book" />',
+    '<meta property="og:site_name" content="深夜文库" />',
+    `<meta property="og:url" content="${escAttr(pageUrl)}" />`,
+    `<meta property="og:title" content="${escAttr(title + ' - ' + author + ' | 深夜文库')}" />`,
+    `<meta property="og:description" content="${escAttr(desc)}" />`,
+    `<meta property="og:image" content="${escAttr(coverUrl)}" />`,
+    '<meta property="og:image:width" content="400" />',
+    '<meta property="og:image:height" content="560" />',
+    `<meta property="og:image:alt" content="${escAttr(title + ' 封面')}" />`,
+    '<meta name="twitter:card" content="summary_large_image" />',
+    `<meta name="twitter:title" content="${escAttr(title + ' - ' + author + ' | 深夜文库')}" />`,
+    `<meta name="twitter:description" content="${escAttr(desc)}" />`,
+    `<meta name="twitter:image" content="${escAttr(coverUrl)}" />`
+  ].join('\n');
+
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -245,6 +264,7 @@ function bookPageHtml(book, preview, chData) {
 <meta name="keywords" content="${escAttr(keywords)}" />
 <meta name="rating" content="adult" />
 <link rel="canonical" href="${SITE}/book/${id}" />
+${ogTags}
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>
   :root{ --bg:#0d0d0d; --card:#161616; --fg:#e5e5e5; --muted:#9a9a9a; --orange:#ff9500; --line:#262626; }
@@ -358,6 +378,21 @@ function categoryPageHtml(cat, list, allCats) {
     }
   };
 
+  const catPageUrl = SITE + '/category/' + slug;
+  const catImgUrl = R2_BASE + 'cat/' + slug + '.jpg';
+  const catOgTags = [
+    '<meta property="og:type" content="website" />',
+    '<meta property="og:site_name" content="深夜文库" />',
+    `<meta property="og:url" content="${escAttr(catPageUrl)}" />`,
+    `<meta property="og:title" content="${escAttr(title)}" />`,
+    `<meta property="og:description" content="${escAttr(desc)}" />`,
+    `<meta property="og:image" content="${escAttr(catImgUrl)}" />`,
+    '<meta name="twitter:card" content="summary_large_image" />',
+    `<meta name="twitter:title" content="${escAttr(title)}" />`,
+    `<meta name="twitter:description" content="${escAttr(desc)}" />`,
+    `<meta name="twitter:image" content="${escAttr(catImgUrl)}" />`
+  ].join('\n');
+
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -368,6 +403,7 @@ function categoryPageHtml(cat, list, allCats) {
 <meta name="keywords" content="${escAttr(keywords)}" />
 <meta name="rating" content="adult" />
 <link rel="canonical" href="${SITE}/category/${slug}" />
+${catOgTags}
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>
   :root{ --bg:#0d0d0d; --card:#161616; --fg:#e5e5e5; --muted:#9a9a9a; --orange:#ff9500; --line:#262626; }
