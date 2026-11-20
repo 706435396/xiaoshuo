@@ -1,0 +1,84 @@
+name: X Social Auto Post (Bluesky + Mastodon)
+
+# 每天三个时段各发 1 条，北京时间 10:00 / 20:00 / 23:00（UTC 02:00 / 12:00 / 15:00）
+# 上午=中文推荐，晚间=中文悬念，海外时段=英文发现
+# 无成本：Bluesky / Mastodon 官方 API 免费，GitHub Actions 免费额度内
+on:
+  schedule:
+    - cron: '0 2 * * *'    # 北京时间 10:00 morning
+    - cron: '0 12 * * *'   # 北京时间 20:00 evening
+    - cron: '0 15 * * *'   # 北京时间 23:00 night
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: '发布时段 / 文案类型'
+        required: true
+        default: 'morning'
+        type: choice
+        options: [morning, evening, night]
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 解析本次时段
+        id: slot
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ github.event.inputs.slot }}" >> "$GITHUB_OUTPUT"
+          else
+            # 根据 UTC 小时推断对应时段
+            H=$(date -u +%H)
+            # GitHub Actions 定时可能延迟数分钟到数小时，用区间兜底：
+            # UTC 00-06 → morning；07-13 → evening；14-23 → night
+            H10=$((10#$H))
+            if [ "$H10" -lt 7 ]; then S=morning
+            elif [ "$H10" -lt 14 ]; then S=evening
+            else S=night
+            fi
+            echo "value=$S" >> "$GITHUB_OUTPUT"
+          fi
+          echo "本次时段: $(cat $GITHUB_OUTPUT)"
+
+      - name: 发布到 Bluesky + Mastodon
+        env:
+          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
+          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
+          BSKY_SELF_LABEL: ${{ secrets.BSKY_SELF_LABEL || 'sexual' }}
+          MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
+          MASTODON_TOKEN: ${{ secrets.MASTODON_TOKEN }}
+        run: node tools/x_social_publish.js --slot=${{ steps.slot.outputs.value }}
+
+      # 凭证未配置时脚本会跳过发布且不写状态，这里 diff 为空自然跳过提交
+      - name: 回写发布状态（防重复）
+        run: |
+          if git diff --quiet -- promo/x-social-state.json; then
+            echo "状态无变化，跳过提交"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add promo/x-social-state.json
+          git commit -m "chore: 记录 X Social 发布状态 [skip ci]"
+          git push
+
+      - name: 上传运行日志供查看
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: x-social-log-${{ steps.slot.outputs.value }}
+          path: promo/x-social-state.json
+          retention-days: 14
