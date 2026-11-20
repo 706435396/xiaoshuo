@@ -1,6 +1,20 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-20T00:00:00.000Z",
-  "published": [],
+  "updatedAt": "2026-11-20T15:17:33.247Z",
+  "published": [
+    {
+      "post_id": "1374-cn-rec",
+      "slot": "morning",
+      "at": "2026-11-20T15:17:32.458Z",
+      "bluesky": {
+        "error": "Bluesky 登录失败 HTTP 400: {\"error\":\"InvalidEmail\",\"message\":\"Invalid email address: Address local part cannot be empty\"}"
+      },
+      "mastodon": {
+        "ok": true,
+        "url": "https://mastodon.social/@shenyepublisher/117649431138421926",
+        "id": "117649431138421926"
+      }
+    }
+  ],
   "failed": []
 }
