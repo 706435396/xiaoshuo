@@ -27,6 +27,7 @@
     .spinner { border: 3px solid rgba(120,120,120,.25); border-top-color: #6b7280; border-radius: 50%; width: 28px; height: 28px; animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
+  <script src="/analytics.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-[#121212] dark:text-gray-200 h-screen flex flex-col">
   <!-- 顶部控制条 -->
@@ -209,7 +210,10 @@
     const endpoint = authMode === 'reg' ? '/register' : '/login';
     const r = await apiCall(endpoint, { method: 'POST', body: JSON.stringify({ username: name, password: pwd }) });
     $('authSubmit').disabled = false;
-    if (r.ok) { closeAuth(); onAuthed(r.data.token, r.data.username); }
+    if (r.ok) {
+      closeAuth(); onAuthed(r.data.token, r.data.username);
+      try { if (authMode === 'reg' && window.SY_TRACK) SY_TRACK.signUp('site_form'); else if (window.SY_TRACK) SY_TRACK.login(); } catch (e) {}
+    }
     else $('authMsg').textContent = r.data.error || '操作失败';
   }
   $('authBtn').addEventListener('click', () => { if (getCurUser()) location.href = '/profile'; else openAuth('login'); });
