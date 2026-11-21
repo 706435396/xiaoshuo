@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-20T22:12:18.684Z",
+  "updatedAt": "2026-11-21T09:01:43.893Z",
   "published": [
     {
       "post_id": "1374-cn-rec",
@@ -45,6 +45,22 @@
         "ok": true,
         "url": "https://mastodon.social/@shenyepublisher/117651062028872324",
         "id": "117651062028872324"
+      }
+    },
+    {
+      "post_id": "1374-cn-susp",
+      "slot": "evening",
+      "at": "2026-11-21T09:01:42.655Z",
+      "bluesky": {
+        "ok": true,
+        "url": "https://bsky.app/profile/shenye-publisher.bsky.social/post/3n2sqi2pzb32f",
+        "uri": "at://did:plc:llulqsdytcre2mqro3v5nq73/app.bsky.feed.post/3n2sqi2pzb32f",
+        "cid": "bafyreihcfvpr5w5mysaiqv75x53dfqkc4tfnuzpodvfny4sswc252fk7dm"
+      },
+      "mastodon": {
+        "ok": true,
+        "url": "https://mastodon.social/@shenyepublisher/117653615655042991",
+        "id": "117653615655042991"
       }
     }
   ],
