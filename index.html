@@ -81,11 +81,8 @@
         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 px-1">分类</h3>
         <div id="catList" class="space-y-1"></div>
       </div>
-      <!-- 左侧分类栏下方：广告位（后台 /admin-ads.html 配置，未启用时自动隐藏） -->
-      <div class="grid grid-cols-1 gap-2 mt-3">
-        <div data-ad-key="left-1" class="hidden text-center overflow-hidden"></div>
-        <div data-ad-key="left-2" class="hidden text-center overflow-hidden"></div>
-      </div>
+      <!-- 左侧分类栏下方：C 版广告网格（后台 /admin-ads 配置，可增删，未启用自动隐藏） -->
+      <div data-ad-zone="cat" class="ad-grid ad-grid-cat mt-3"></div>
     </aside>
 
     <!-- 中间：主内容 -->
@@ -94,14 +91,8 @@
       <!-- 移动端：分类横向滚动 -->
       <div id="catBar" class="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-1"></div>
 
-      <!-- 首页广告位：全部由后台 /admin-ads.html 配置（KV），未启用时自动隐藏、不留空白 -->
-      <div class="mb-5 space-y-2.5">
-        <div data-ad-key="home-banner" class="hidden text-center overflow-hidden"></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div data-ad-key="home-rect" class="hidden flex justify-center min-h-[60px] overflow-hidden"></div>
-          <div data-ad-key="home-native" class="hidden flex justify-center min-h-[60px] overflow-hidden"></div>
-        </div>
-      </div>
+      <!-- 首页顶部广告网格：C 版 hero 区（后台 /admin-ads 配置，可增删，自适应排列） -->
+      <div data-ad-zone="hero" class="ad-grid ad-grid-hero mb-5"></div>
 
       <!-- Tabs：最新 / 精华 / 热门 -->
       <div class="flex gap-1 mb-5 border-b border-gray-200 dark:border-[#262626]">
@@ -155,12 +146,8 @@
     <aside id="deskShelf" class="hidden lg:block w-56 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto card-shadow rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-4">
       <h3 class="text-sm font-medium mb-3 text-gray-800 dark:text-gray-100">我的书架</h3>
       <div id="deskShelfBody" class="space-y-4 text-sm"></div>
-      <!-- 右侧书架栏下方：广告位（后台 /admin-ads.html 配置，未启用时自动隐藏） -->
-      <div class="grid grid-cols-1 gap-2 mt-4">
-        <div data-ad-key="right-1" class="hidden text-center overflow-hidden"></div>
-        <div data-ad-key="right-2" class="hidden text-center overflow-hidden"></div>
-        <div data-ad-key="right-3" class="hidden text-center overflow-hidden"></div>
-      </div>
+      <!-- 右侧书架栏下方：C 版 shelf 广告网格（后台 /admin-ads 配置，可增删） -->
+      <div data-ad-zone="shelf" class="ad-grid ad-grid-shelf mt-4"></div>
     </aside>
   </main>
 

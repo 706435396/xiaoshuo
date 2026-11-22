@@ -19,56 +19,76 @@
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--adm-txt)}
   a{color:var(--adm-accent2)}
-  .adm-wrap{max-width:1080px;margin:0 auto;padding:28px 18px 80px;position:relative;z-index:1}
-  .adm-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+  .adm-wrap{max-width:1120px;margin:0 auto;padding:26px 18px 90px;position:relative;z-index:1}
+  .adm-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
   .adm-title{font-size:22px;font-weight:700;letter-spacing:.5px;background:linear-gradient(90deg,#ffb84d,#a78bfa 55%,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
   .adm-sub{font-size:12px;color:var(--adm-dim);margin-top:6px}
   .adm-head a{font-size:12px;text-decoration:none;border:1px solid var(--adm-line);padding:6px 12px;border-radius:8px}
-  .panel{background:var(--adm-bg);border:1px solid var(--adm-line);border-radius:14px;padding:22px;backdrop-filter:blur(10px);box-shadow:0 8px 40px rgba(0,0,0,.35)}
+  .panel{background:var(--adm-bg);border:1px solid var(--adm-line);border-radius:14px;padding:20px;backdrop-filter:blur(10px);box-shadow:0 8px 40px rgba(0,0,0,.35)}
   .login-panel{max-width:420px;margin:60px auto}
   .login-panel h2{margin:0 0 8px;font-size:18px}
   .login-panel p{color:var(--adm-dim);font-size:13px;line-height:1.7;margin:0 0 18px}
-  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
   .field label{font-size:12px;color:var(--adm-dim)}
   input[type=text],input[type=password],textarea,select{
     width:100%;background:rgba(8,6,20,.72);color:var(--adm-txt);border:1px solid var(--adm-line);
     border-radius:8px;padding:9px 11px;font-size:13px;outline:none;font-family:inherit;
   }
   input:focus,textarea:focus,select:focus{border-color:var(--adm-accent);box-shadow:0 0 0 2px rgba(167,139,250,.15)}
-  textarea{resize:vertical;min-height:76px;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
-  .btn{border:1px solid var(--adm-line);background:rgba(167,139,250,.12);color:var(--adm-txt);padding:9px 18px;border-radius:8px;cursor:pointer;font-size:13px;transition:.15s}
+  textarea{resize:vertical;min-height:70px;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
+  .btn{border:1px solid var(--adm-line);background:rgba(167,139,250,.12);color:var(--adm-txt);padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:.15s}
   .btn:hover{background:rgba(167,139,250,.24);border-color:var(--adm-accent)}
   .btn.primary{background:linear-gradient(90deg,rgba(167,139,250,.9),rgba(34,211,238,.75));color:#0b0818;font-weight:700;border-color:transparent}
   .btn.primary:hover{filter:brightness(1.12)}
   .btn.sm{padding:5px 11px;font-size:12px}
   .btn.danger{color:#fca5a5;border-color:rgba(252,165,165,.3)}
   .btn.danger:hover{background:rgba(252,165,165,.12)}
-  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .btn.icon{padding:4px 9px;font-size:12px;line-height:1}
+  .toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .toolbar .spacer{flex:1}
   .status{font-size:12px;color:var(--adm-dim)}
   .status.ok{color:#6ee7b7}
   .status.err{color:#fca5a5}
-  .slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-  .slot{background:var(--adm-card);border:1px solid var(--adm-line);border-radius:12px;padding:15px;position:relative}
-  .slot.off{opacity:.62}
-  .slot-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
-  .slot-name{font-size:14px;font-weight:600}
-  .slot-key{font-size:10px;color:var(--adm-dim);font-family:ui-monospace,monospace;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px}
-  .slot-pos{font-size:11px;color:var(--adm-dim);margin-bottom:12px;line-height:1.5}
-  .sw{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--adm-dim)}
+  .zone{margin-top:18px}
+  .zone-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .zone-name{font-size:15px;font-weight:700;color:#c4b5fd}
+  .zone-pos{font-size:11px;color:var(--adm-dim)}
+  .zone-hd .spacer{flex:1}
+  .slot-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+  .slot{background:var(--adm-card);border:1px solid var(--adm-line);border-radius:12px;padding:14px}
+  .slot.off{opacity:.55}
+  .slot-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .slot-label{font-size:13px;font-weight:600}
+  .slot-ops{display:flex;gap:5px;align-items:center}
+  .sw{display:inline-flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;color:var(--adm-dim)}
   .sw input{width:15px;height:15px;accent-color:#a78bfa;cursor:pointer}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
   .hint{font-size:10px;color:#7f77a3;margin-top:4px;line-height:1.4}
-  .prev{margin-top:10px;padding:8px;background:rgba(0,0,0,.25);border-radius:8px;min-height:34px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-  .prev img{max-width:100%;max-height:110px;display:block;border-radius:5px}
+  .prev{margin-top:8px;padding:8px;background:rgba(0,0,0,.25);border-radius:8px;min-height:32px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .prev img{max-width:100%;max-height:90px;display:block;border-radius:5px}
   .prev .empty{font-size:11px;color:#6f668f}
-  .help{margin-top:22px;background:rgba(8,6,20,.5);border:1px solid var(--adm-line);border-radius:12px;padding:16px 18px;font-size:12px;color:var(--adm-dim);line-height:1.85}
+  .help{margin-top:22px;background:rgba(8,6,20,.5);border:1px solid var(--adm-line);border-radius:12px;padding:14px 18px;font-size:12px;color:var(--adm-dim);line-height:1.8}
   .help b{color:var(--adm-txt)}
   .help code{background:rgba(0,0,0,.35);padding:1px 5px;border-radius:4px;color:#c4b5fd;font-size:11px}
-  .help ul{margin:8px 0 0;padding-left:20px}
+  .help ul{margin:6px 0 0;padding-left:20px}
+  /* 预览弹层 */
+  .modal{position:fixed;inset:0;background:rgba(4,3,12,.88);z-index:80;display:none;align-items:center;justify-content:center;padding:18px}
+  .modal.show{display:flex}
+  .modal-box{width:100%;max-width:1180px;max-height:94vh;display:flex;flex-direction:column;background:var(--adm-bg);border:1px solid var(--adm-line);border-radius:14px;overflow:hidden}
+  .modal-hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--adm-line);flex-wrap:wrap}
+  .modal-hd .title{font-size:15px;font-weight:700}
+  .dev-tabs{display:flex;gap:6px;margin-left:8px}
+  .dev-tab{border:1px solid var(--adm-line);background:rgba(167,139,250,.08);color:var(--adm-dim);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px}
+  .dev-tab.active{background:linear-gradient(90deg,rgba(167,139,250,.9),rgba(34,211,238,.75));color:#0b0818;font-weight:700;border-color:transparent}
+  .modal-hd .spacer{flex:1}
+  .dev-meta{font-size:11px;color:var(--adm-dim)}
+  .preview-scroll{flex:1;overflow:auto;background:#07060f;padding:14px;display:flex;justify-content:center}
+  .preview-scale-wrap{position:relative;flex:none}
+  .preview-scale-wrap iframe{border:0;display:block;background:#0d0a1c;transform-origin:top left}
   .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:rgba(20,17,40,.96);border:1px solid var(--adm-line);padding:11px 22px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 8px 30px rgba(0,0,0,.5)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  @media(max-width:640px){.slot-grid{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+  @media(max-width:640px){.slot-list{grid-template-columns:1fr}.row2,.row3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -76,7 +96,7 @@
   <div class="adm-head">
     <div>
       <div class="adm-title">深夜文库 · 广告管理</div>
-      <div class="adm-sub">改完即生效，无需重新部署 · 数据存 Cloudflare KV</div>
+      <div class="adm-sub">C 版三区动态网格 · 可增删广告位 · 三端预览 · 数据存 Cloudflare KV</div>
     </div>
     <a href="/" target="_blank">查看首页 ↗</a>
   </div>
@@ -85,39 +105,62 @@
   <section id="loginView" class="panel login-panel">
     <h2>输入管理密码</h2>
     <p>密码为 Cloudflare 环境变量 <code>AD_PASS</code>，未设置时默认 <code>shenye2026</code>。建议到 CF 后台修改。</p>
-    <div class="field">
-      <label>管理密码</label>
-      <input type="password" id="passInput" placeholder="请输入管理密码" autocomplete="current-password" />
-    </div>
+    <div class="field"><label>管理密码</label><input type="password" id="passInput" placeholder="请输入管理密码" autocomplete="current-password" /></div>
     <button class="btn primary" id="loginBtn">进入后台</button>
     <div class="status" id="loginStatus" style="margin-top:12px"></div>
   </section>
 
-  <!-- 管理主界面 -->
+  <!-- 主界面 -->
   <main id="adminView" style="display:none">
-    <div class="panel" style="margin-bottom:16px">
+    <div class="panel">
       <div class="toolbar">
         <span class="status" id="saveStatus"></span>
         <span class="spacer"></span>
         <button class="btn sm" id="reloadBtn">重新载入</button>
         <button class="btn sm danger" id="clearBtn">清空全部</button>
         <button class="btn primary" id="saveBtn">保存全部</button>
+        <button class="btn" id="previewBtn">预览三端</button>
         <button class="btn sm" id="logoutBtn">退出</button>
       </div>
     </div>
-    <div class="slot-grid" id="slotGrid"></div>
+
+    <div id="zoneRoot"></div>
 
     <div class="help">
       <b>使用说明</b>
       <ul>
-        <li><b>图片模式</b>：在「内容」填图片直链（可放图床或自己的 R2），「点击链接」填跳转地址；留空则不可点击。</li>
-        <li><b>HTML 模式</b>：粘贴联盟给的代码。支持异步脚本型（如 JuicyAds 的 <code>&lt;ins&gt; + jads.js</code>、Adsterra 的 <code>container + 脚本</code>）和 iframe / img 代码。</li>
-        <li><b>不支持</b> <code>document.write</code> 型代码（如旧版 Adsterra atOptions 横幅），动态插入会清空整页；这类请用联盟后台的 iframe 版本。</li>
-        <li>只勾选「启用」的位会显示；未启用的位自动隐藏，不留空白。保存后刷新首页（Ctrl+F5）即可看到。</li>
-        <li>侧栏宽度约 208/224px，图片建议用自适应宽度，别放超过 300px 固定宽度的素材。</li>
+        <li><b>三个区</b>：<code>顶部 hero</code>（主区 Tabs 上方，桌面两列/手机单列）、<code>左侧 cat</code>（分类栏下，约 208px）、<code>右侧 shelf</code>（书架栏下，约 224px）。每区可任意「添加广告位」或「删除」。</li>
+        <li><b>图片模式</b>：内容填图片直链，链接填点击跳转地址；选尺寸预设后按该尺寸居中显示。</li>
+        <li><b>HTML 模式</b>：粘贴联盟代码，支持异步脚本（<code>&lt;ins&gt;+jads.js</code>、<code>container+脚本</code>）与 iframe。<b>不支持</b> <code>document.write</code> 型（如旧版 atOptions），会清空整页；请用 iframe 版。</li>
+        <li><b>尺寸预设</b>：auto 为自适应（图片按容器缩放）；固定尺寸按像素居中，窄屏自动缩到 100% 宽防溢出；<code>728×90 / 468×60</code> 为通栏，占满整行。</li>
+        <li><b>三端预览</b>：点「预览三端」会先自动保存，再按 PC 1440 / 笔记本 1280 / 手机 390 三种视口加载真实首页，切换标签查看。</li>
+        <li>只有勾选「启用」且有内容的广告位会显示；未启用的不占位。改动需保存后才上线上生效。</li>
       </ul>
     </div>
   </main>
+</div>
+
+<!-- 三端预览弹层 -->
+<div class="modal" id="previewModal">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <span class="title">三端预览</span>
+      <div class="dev-tabs">
+        <button class="dev-tab active" data-w="1440">PC · 1440</button>
+        <button class="dev-tab" data-w="1280">笔记本 · 1280</button>
+        <button class="dev-tab" data-w="390">手机 · 390</button>
+      </div>
+      <span class="dev-meta" id="devMeta"></span>
+      <span class="spacer"></span>
+      <button class="btn sm" id="previewReload">刷新</button>
+      <button class="btn sm" id="previewClose">关闭 ✕</button>
+    </div>
+    <div class="preview-scroll" id="previewScroll">
+      <div class="preview-scale-wrap" id="previewWrap">
+        <iframe id="previewFrame" src="about:blank"></iframe>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -128,15 +171,15 @@
   var PASS_KEY = 'sy_ad_admin_pass';
   var API = '/api/adslots';
 
-  var SLOTS = [
-    { key:'home-banner', name:'顶部通栏',   pos:'主区 Tabs 上方 · 建议 320×50 或窄横幅', hint:'全宽居中，适合横幅' },
-    { key:'home-rect',   name:'顶部左格',   pos:'主区顶部左侧 · 建议 300×250 中矩形',   hint:'手机端自动单列' },
-    { key:'home-native', name:'顶部右格',   pos:'主区顶部右侧 · 建议自适应原生',       hint:'手机端自动单列' },
-    { key:'left-1',      name:'左侧广告 ①', pos:'左侧分类栏下方 · 栏宽约 208px',       hint:'建议正方形或竖幅' },
-    { key:'left-2',      name:'左侧广告 ②', pos:'左侧分类栏下方 · 栏宽约 208px',       hint:'建议正方形或竖幅' },
-    { key:'right-1',     name:'右侧广告 ①', pos:'右侧书架栏下方 · 栏宽约 224px',       hint:'建议窄横幅' },
-    { key:'right-2',     name:'右侧广告 ②', pos:'右侧书架栏下方 · 栏宽约 224px',       hint:'建议窄横幅' },
-    { key:'right-3',     name:'右侧广告 ③', pos:'右侧书架栏下方 · 栏宽约 224px',       hint:'建议卡片或竖幅' }
+  var ZONES = [
+    { key:'hero',  name:'顶部 hero 网格',  pos:'主区 Tabs 上方 · 桌面两列 / 手机单列 · 建议 300×250 或 320×50' },
+    { key:'cat',   name:'左侧 cat 网格',   pos:'左侧分类栏下方 · 栏宽约 208px · 建议窄图 / 160×600 竖幅' },
+    { key:'shelf', name:'右侧 shelf 网格', pos:'右侧书架栏下方 · 栏宽约 224px · 建议窄图 / 300×250' }
+  ];
+  var SIZES = [
+    ['auto','自适应'],['300x250','300×250 中矩形'],['320x50','320×50 横幅'],
+    ['160x600','160×600 竖幅'],['336x280','336×280 大矩形'],['250x250','250×250 方形'],
+    ['320x100','320×100 大横幅'],['728x90','728×90 通栏'],['300x600','300×600 半页'],['468x60','468×60 全横幅']
   ];
 
   var $ = function(id){ return document.getElementById(id); };
@@ -144,191 +187,249 @@
   try { pass = sessionStorage.getItem(PASS_KEY) || ''; } catch(e){}
 
   function toast(msg){
-    var t = $('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(t._timer);
-    t._timer = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+    var t=$('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(t._timer); t._timer=setTimeout(function(){t.classList.remove('show')},2400);
   }
-  function setStatus(el, msg, cls){
-    el.textContent = msg;
-    el.className = 'status' + (cls ? ' ' + cls : '');
-  }
+  function setStatus(el,msg,cls){ el.textContent=msg; el.className='status'+(cls?' '+cls:''); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escAttr(s){ return esc(s).replace(/'/g,'&#39;'); }
+  function newId(){ return 'ad'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
   // ---------- 登录 ----------
   async function login(p, silent){
-    var res = await fetch(API, { headers: p ? { 'X-Ad-Pass': p } : {}, cache:'no-store' });
+    var res = await fetch(API, { headers: p?{'X-Ad-Pass':p}:{}, cache:'no-store' });
     var d = await res.json();
-    if (!d.authed) {
-      if (!silent) setStatus($('loginStatus'), '密码错误，请重试', 'err');
-      return false;
-    }
+    if (!d.authed){ if(!silent) setStatus($('loginStatus'),'密码错误，请重试','err'); return false; }
     pass = p;
-    try { sessionStorage.setItem(PASS_KEY, p); } catch(e){}
-    $('loginView').style.display = 'none';
-    $('adminView').style.display = '';
-    await load(true);
-    return true;
+    try{ sessionStorage.setItem(PASS_KEY,p); }catch(e){}
+    $('loginView').style.display='none'; $('adminView').style.display='';
+    await load(true); return true;
   }
-
-  $('loginBtn').addEventListener('click', function(){
-    var p = $('passInput').value.trim();
-    if (!p) { setStatus($('loginStatus'), '请输入密码', 'err'); return; }
-    login(p, false).catch(function(e){ setStatus($('loginStatus'), '网络错误：' + e.message, 'err'); });
+  $('loginBtn').addEventListener('click',function(){
+    var p=$('passInput').value.trim();
+    if(!p){ setStatus($('loginStatus'),'请输入密码','err'); return; }
+    login(p,false).catch(function(e){ setStatus($('loginStatus'),'网络错误：'+e.message,'err'); });
   });
-  $('passInput').addEventListener('keydown', function(e){
-    if (e.key === 'Enter') $('loginBtn').click();
-  });
+  $('passInput').addEventListener('keydown',function(e){ if(e.key==='Enter') $('loginBtn').click(); });
 
   // ---------- 渲染表单 ----------
-  function field(key, suffix, label, cls, placeholder){
-    return '<div class="field ' + (cls||'') + '"><label>' + label + '</label>' +
-           '<div data-f="' + suffix + '">' + placeholder + '</div></div>';
+  function slotCard(s){
+    var opts = SIZES.map(function(x){ return '<option value="'+x[0]+'"'+(s.size===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join('');
+    return '<div class="slot'+(s.enabled?'':' off')+'" data-id="'+escAttr(s.id)+'">'+
+      '<div class="slot-hd">'+
+        '<span class="slot-label">广告位 <span class="zone-pos" data-idx></span></span>'+
+        '<div class="slot-ops">'+
+          '<label class="sw"><input type="checkbox" data-f="enabled"'+(s.enabled?' checked':'')+' />启用</label>'+
+          '<button class="btn icon" data-act="up" title="上移">↑</button>'+
+          '<button class="btn icon" data-act="down" title="下移">↓</button>'+
+          '<button class="btn icon danger" data-act="del" title="删除">✕</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="row3">'+
+        '<div class="field"><label>类型</label><select data-f="type">'+
+          '<option value="image"'+(s.type==='image'?' selected':'')+'>图片+链接</option>'+
+          '<option value="html"'+(s.type==='html'?' selected':'')+'>HTML代码</option>'+
+        '</select></div>'+
+        '<div class="field"><label>尺寸预设</label><select data-f="size">'+opts+'</select></div>'+
+        '<div class="field"><label>备注</label><input type="text" data-f="note" value="'+esc(s.note)+'" placeholder="自己看" /></div>'+
+      '</div>'+
+      '<div class="field"><label>内容（图片直链 或 HTML 代码）</label>'+
+        '<textarea data-f="value" placeholder="'+'粘贴图片地址或联盟代码'+'">'+esc(s.value)+'</textarea></div>'+
+      '<div class="field" data-row="link" style="'+(s.type==='html'?'display:none':'')+'"><label>点击链接（图片模式）</label>'+
+        '<input type="text" data-f="link" value="'+esc(s.link)+'" placeholder="https://… 留空不可点击" /></div>'+
+      '<div class="prev" data-f="prev"></div>'+
+    '</div>';
   }
 
   function buildForm(data){
-    var grid = $('slotGrid');
-    grid.innerHTML = SLOTS.map(function(s){
-      var d = (data.slots && data.slots[s.key]) || { enabled:false, type:'image', value:'', link:'', note:'' };
-      return '<div class="slot' + (d.enabled ? '' : ' off') + '" data-key="' + s.key + '">' +
-        '<div class="slot-hd">' +
-          '<div><span class="slot-name">' + s.name + '</span> <span class="slot-key">' + s.key + '</span></div>' +
-          '<label class="sw"><input type="checkbox" data-f="enabled" ' + (d.enabled ? 'checked' : '') + ' />启用</label>' +
-        '</div>' +
-        '<div class="slot-pos">' + s.pos + '</div>' +
-        '<div class="row2">' +
-          '<div class="field"><label>类型</label><select data-f="type">' +
-            '<option value="image" ' + (d.type === 'image' ? 'selected' : '') + '>图片 + 链接</option>' +
-            '<option value="html" ' + (d.type === 'html' ? 'selected' : '') + '>HTML 代码</option>' +
-          '</select></div>' +
-          '<div class="field"><label>备注（自己看）</label><input type="text" data-f="note" value="' + esc(d.note) + '" placeholder="例如：某联盟横幅" /></div>' +
-        '</div>' +
-        '<div class="field"><label>内容（图片直链 或 HTML 代码）</label>' +
-          '<textarea data-f="value" placeholder="' + (d.type === 'html' ? '粘贴联盟代码' : 'https://example.com/ad.png') + '">' + esc(d.value) + '</textarea>' +
-          '<div class="hint">' + s.hint + '</div>' +
-        '</div>' +
-        '<div class="field" data-row="link" style="' + (d.type === 'html' ? 'display:none' : '') + '"><label>点击链接（图片模式有效）</label>' +
-          '<input type="text" data-f="link" value="' + esc(d.link) + '" placeholder="https://… 留空则不可点击" /></div>' +
-        '<div class="prev" data-f="prev"></div>' +
-      '</div>';
-    }).join('');
+    var root=$('zoneRoot'); root.innerHTML='';
+    ZONES.forEach(function(z){
+      var list=(data.zones && data.zones[z.key])||[];
+      var sec=document.createElement('section');
+      sec.className='zone panel';
+      sec.innerHTML=
+        '<div class="zone-hd">'+
+          '<span class="zone-name">'+z.name+'</span>'+
+          '<span class="zone-pos">'+z.pos+'</span>'+
+          '<span class="spacer"></span>'+
+          '<span class="status">'+list.length+' 个广告位</span>'+
+          '<button class="btn sm primary" data-act="add">+ 添加广告位</button>'+
+        '</div>'+
+        '<div class="slot-list"></div>';
+      var listEl=sec.querySelector('.slot-list');
+      var countEl=sec.querySelector('.zone-hd .status');
+      function syncCount(){ countEl.textContent=listEl.querySelectorAll('.slot').length+' 个广告位'; syncIdx(); }
+      function syncIdx(){ [].forEach.call(listEl.querySelectorAll('.slot'),function(c,i){ c.querySelector('[data-idx]').textContent='#'+(i+1); }); }
 
-    // 事件绑定
-    Array.prototype.forEach.call(grid.querySelectorAll('.slot'), function(card){
-      var typeSel = card.querySelector('[data-f="type"]');
-      var valTa = card.querySelector('[data-f="value"]');
-      var linkRow = card.querySelector('[data-row="link"]');
-      var prev = card.querySelector('[data-f="prev"]');
-      var chk = card.querySelector('[data-f="enabled"]');
-
-      function refreshPreview(){
-        var t = typeSel.value;
-        var v = valTa.value.trim();
-        linkRow.style.display = (t === 'image') ? '' : 'none';
-        card.classList.toggle('off', !chk.checked);
-        if (!v) { prev.innerHTML = '<span class="empty">未填写内容</span>'; return; }
-        if (t === 'image') {
-          prev.innerHTML = '<img src="' + escAttr(v) + '" alt="预览" onerror="this.style.display=\'none\'" />';
-        } else {
-          prev.innerHTML = '<span class="empty">HTML 代码（' + v.length + ' 字符）· 保存后到首页预览</span>';
+      function bindCard(card){
+        var typeSel=card.querySelector('[data-f="type"]');
+        var valTa=card.querySelector('[data-f="value"]');
+        var linkRow=card.querySelector('[data-row="link"]');
+        var prev=card.querySelector('[data-f="prev"]');
+        var chk=card.querySelector('[data-f="enabled"]');
+        function refresh(){
+          var t=typeSel.value, v=valTa.value.trim();
+          linkRow.style.display=(t==='image')?'':'none';
+          card.classList.toggle('off',!chk.checked);
+          if(!v){ prev.innerHTML='<span class="empty">未填写内容</span>'; return; }
+          if(t==='image') prev.innerHTML='<img src="'+escAttr(v)+'" alt="预览" onerror="this.style.display=\'none\'" />';
+          else prev.innerHTML='<span class="empty">HTML 代码（'+v.length+' 字符）· 保存后到预览看效果</span>';
         }
+        typeSel.addEventListener('change',refresh);
+        valTa.addEventListener('input',refresh);
+        chk.addEventListener('change',refresh);
+        card.addEventListener('click',function(e){
+          var b=e.target.closest('button[data-act]'); if(!b) return;
+          var act=b.getAttribute('data-act');
+          if(act==='del'){ if(confirm('删除这个广告位？')){ card.remove(); syncCount(); } }
+          else if(act==='up'){ var p=card.previousElementSibling; if(p) listEl.insertBefore(card,p); syncIdx(); }
+          else if(act==='down'){ var n=card.nextElementSibling; if(n) listEl.insertBefore(n,card); syncIdx(); }
+        });
+        refresh();
       }
-      typeSel.addEventListener('change', refreshPreview);
-      valTa.addEventListener('input', refreshPreview);
-      chk.addEventListener('change', refreshPreview);
-      refreshPreview();
+
+      list.forEach(function(s){
+        var wrap=document.createElement('div');
+        wrap.innerHTML=slotCard(s);
+        var card=wrap.firstChild;
+        listEl.appendChild(card);
+        bindCard(card);
+      });
+      syncCount();
+
+      sec.querySelector('[data-act="add"]').addEventListener('click',function(){
+        var wrap=document.createElement('div');
+        wrap.innerHTML=slotCard({ id:newId(), enabled:false, type:'image', size:'auto', value:'', link:'', note:'' });
+        var card=wrap.firstChild;
+        listEl.appendChild(card);
+        bindCard(card); syncCount();
+        card.scrollIntoView({behavior:'smooth',block:'center'});
+      });
+      root.appendChild(sec);
     });
   }
-
-  function esc(s){
-    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  function escAttr(s){ return esc(s).replace(/'/g,'&#39;'); }
 
   function collect(){
-    var slots = {};
-    Array.prototype.forEach.call(document.querySelectorAll('#slotGrid .slot'), function(card){
-      var key = card.getAttribute('data-key');
-      slots[key] = {
-        enabled: card.querySelector('[data-f="enabled"]').checked,
-        type: card.querySelector('[data-f="type"]').value,
-        value: card.querySelector('[data-f="value"]').value,
-        link: card.querySelector('[data-f="link"]').value,
-        note: card.querySelector('[data-f="note"]').value
-      };
+    var zones={};
+    // section 顺序 = ZONES 顺序
+    var secs=[].slice.call($('zoneRoot').children);
+    secs.forEach(function(sec,i){
+      var key=ZONES[i].key;
+      zones[key]=[];
+      [].forEach.call(sec.querySelectorAll('.slot'),function(card){
+        zones[key].push({
+          id:card.getAttribute('data-id'),
+          enabled:card.querySelector('[data-f="enabled"]').checked,
+          type:card.querySelector('[data-f="type"]').value,
+          size:card.querySelector('[data-f="size"]').value,
+          value:card.querySelector('[data-f="value"]').value,
+          link:card.querySelector('[data-f="link"]').value,
+          note:card.querySelector('[data-f="note"]').value
+        });
+      });
     });
-    return slots;
+    return zones;
   }
 
   // ---------- 载入 / 保存 / 清空 ----------
   async function load(silent){
-    try {
-      var d = await fetch(API, { cache:'no-store' }).then(function(r){ return r.json(); });
+    try{
+      var d=await fetch(API,{cache:'no-store'}).then(function(r){return r.json();});
       buildForm(d);
-      var t = d.updatedAt ? new Date(d.updatedAt).toLocaleString('zh-CN') : '从未保存';
-      setStatus($('saveStatus'), '上次保存：' + t, '');
-      if (!silent) toast('已重新载入');
-    } catch(e) {
-      setStatus($('saveStatus'), '载入失败：' + e.message, 'err');
-    }
+      setStatus($('saveStatus'), d.updatedAt?('上次保存：'+new Date(d.updatedAt).toLocaleString('zh-CN')):'尚未保存','');
+      if(!silent) toast('已重新载入');
+    }catch(e){ setStatus($('saveStatus'),'载入失败：'+e.message,'err'); }
   }
+  $('reloadBtn').addEventListener('click',function(){ load(false); });
 
-  $('reloadBtn').addEventListener('click', function(){ load(false); });
-
-  $('saveBtn').addEventListener('click', async function(){
-    var btn = this;
-    btn.disabled = true;
-    setStatus($('saveStatus'), '保存中…', '');
-    try {
-      var res = await fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', 'X-Ad-Pass': pass },
-        body: JSON.stringify({ slots: collect() })
+  async function save(silent){
+    var btn=$('saveBtn'); btn.disabled=true;
+    try{
+      var res=await fetch(API,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Ad-Pass':pass},
+        body:JSON.stringify({zones:collect()})
       });
-      var d = await res.json();
-      if (!res.ok || !d.ok) {
-        setStatus($('saveStatus'), '保存失败：' + (d.error || res.status), 'err');
-        toast('保存失败：' + (d.error || res.status));
-      } else {
-        setStatus($('saveStatus'), '已保存 ' + new Date(d.updatedAt).toLocaleString('zh-CN'), 'ok');
-        toast('保存成功，刷新首页即可看到');
+      var d=await res.json();
+      if(!res.ok||!d.ok){
+        setStatus($('saveStatus'),'保存失败：'+(d.error||res.status),'err');
+        if(!silent) toast('保存失败：'+(d.error||res.status));
+        return false;
       }
-    } catch(e) {
-      setStatus($('saveStatus'), '保存失败：' + e.message, 'err');
-    } finally {
-      btn.disabled = false;
-    }
-  });
+      setStatus($('saveStatus'),'已保存 '+new Date(d.updatedAt).toLocaleString('zh-CN'),'ok');
+      if(!silent) toast('保存成功');
+      return true;
+    }catch(e){ setStatus($('saveStatus'),'保存失败：'+e.message,'err'); return false; }
+    finally{ btn.disabled=false; }
+  }
+  $('saveBtn').addEventListener('click',function(){ save(false); });
 
-  $('clearBtn').addEventListener('click', async function(){
-    if (!confirm('确定清空全部广告位？（立即生效，不可撤销）')) return;
-    var empty = {};
-    SLOTS.forEach(function(s){ empty[s.key] = { enabled:false, type:'image', value:'', link:'', note:'' }; });
-    try {
-      var res = await fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', 'X-Ad-Pass': pass },
-        body: JSON.stringify({ slots: empty })
+  $('clearBtn').addEventListener('click',async function(){
+    if(!confirm('确定清空全部三区广告位？（立即生效，不可撤销）')) return;
+    try{
+      var res=await fetch(API,{
+        method:'POST',headers:{'Content-Type':'application/json','X-Ad-Pass':pass},
+        body:JSON.stringify({zones:{hero:[],cat:[],shelf:[]}})
       });
-      var d = await res.json();
-      if (!res.ok || !d.ok) { toast('清空失败：' + (d.error || res.status)); return; }
-      buildForm({ slots: empty });
-      setStatus($('saveStatus'), '已清空全部广告位', 'ok');
-      toast('已清空');
-    } catch(e) { toast('清空失败：' + e.message); }
+      var d=await res.json();
+      if(!res.ok||!d.ok){ toast('清空失败：'+(d.error||res.status)); return; }
+      buildForm({zones:{hero:[],cat:[],shelf:[]}});
+      setStatus($('saveStatus'),'已清空全部广告位','ok'); toast('已清空');
+    }catch(e){ toast('清空失败：'+e.message); }
   });
 
-  $('logoutBtn').addEventListener('click', function(){
-    try { sessionStorage.removeItem(PASS_KEY); } catch(e){}
-    pass = '';
-    $('adminView').style.display = 'none';
-    $('loginView').style.display = '';
-    $('passInput').value = '';
-    setStatus($('loginStatus'), '已退出', '');
+  $('logoutBtn').addEventListener('click',function(){
+    try{ sessionStorage.removeItem(PASS_KEY); }catch(e){}
+    pass=''; $('adminView').style.display='none'; $('loginView').style.display='';
+    $('passInput').value=''; setStatus($('loginStatus'),'已退出','');
   });
+
+  // ---------- 三端预览 ----------
+  var DEVICES=[{w:1440,h:900,n:'PC 桌面'},{w:1280,h:800,n:'笔记本'},{w:390,h:844,n:'手机'}];
+  var curDev=0, previewTs=0;
+  function fitPreview(){
+    var dev=DEVICES[curDev];
+    var scroll=$('previewScroll');
+    var availW=scroll.clientWidth-28, availH=scroll.clientHeight-28;
+    var scale=Math.min(1, availW/dev.w, availH/dev.h);
+    var frame=$('previewFrame');
+    frame.style.width=dev.w+'px'; frame.style.height=dev.h+'px';
+    frame.style.transform='scale('+scale+')';
+    var wrap=$('previewWrap');
+    wrap.style.width=(dev.w*scale)+'px'; wrap.style.height=(dev.h*scale)+'px';
+    $('devMeta').textContent=dev.n+' · '+dev.w+'×'+dev.h+' · 缩放 '+Math.round(scale*100)+'%';
+  }
+  function loadPreview(){
+    previewTs=Date.now();
+    $('previewFrame').src='/index.html?adpreview='+previewTs;
+    fitPreview();
+  }
+  function openPreview(){
+    $('previewModal').classList.add('show');
+    loadPreview();
+  }
+  $('previewBtn').addEventListener('click',async function(){
+    // 先自动保存，再预览（确保看到最新配置）
+    toast('正在保存并载入预览…');
+    var ok=await save(true);
+    if(!ok){ toast('保存失败，预览的是上次保存的配置'); }
+    openPreview();
+  });
+  $('previewClose').addEventListener('click',function(){ $('previewModal').classList.remove('show'); });
+  $('previewReload').addEventListener('click',function(){ loadPreview(); });
+  [].forEach.call(document.querySelectorAll('.dev-tab'),function(tab){
+    tab.addEventListener('click',function(){
+      [].forEach.call(document.querySelectorAll('.dev-tab'),function(t){t.classList.remove('active');});
+      tab.classList.add('active');
+      curDev=parseInt(tab.getAttribute('data-w'),10)===1440?0:(tab.getAttribute('data-w')==='1280'?1:2);
+      fitPreview();
+    });
+  });
+  window.addEventListener('resize',function(){ if($('previewModal').classList.contains('show')) fitPreview(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') $('previewModal').classList.remove('show'); });
 
   // 启动时若有缓存密码，静默登录
-  if (pass) login(pass, true).catch(function(){ /* 静默失败：显示登录框 */ });
+  if(pass) login(pass,true).catch(function(){});
 })();
 </script>
 </body>

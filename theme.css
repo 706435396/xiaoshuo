@@ -335,3 +335,31 @@ html:not(.dark) body{
   html body{ background-size: auto, auto, auto, auto, auto, auto, auto, auto, auto, 60px 60px, 60px 60px, auto; }
   html .card-shadow, html .rounded-xl{ backdrop-filter:none; }
 }
+
+/* ---------------- C 版动态广告网格（后台 /admin-ads 配置，可增删） ---------------- */
+/* 三区容器：hero 主区自适应两列；cat/shelf 侧栏单列。空容器不占位。 */
+html .ad-grid{ display:grid; gap:.625rem; }
+html .ad-grid:empty{ display:none; }
+html .ad-grid-hero{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+html .ad-grid-cat,
+html .ad-grid-shelf{ grid-template-columns:1fr; }
+@media (max-width: 640px){
+  html .ad-grid-hero{ grid-template-columns:1fr; }
+}
+/* 单个广告格：默认占一列；有 span-2 标记的占满整行（728x90 通栏等） */
+html .ad-cell{ min-width:0; display:flex; justify-content:center; align-items:flex-start; overflow:hidden; border-radius:6px; }
+html .ad-cell.span-2{ grid-column:1 / -1; }
+html .ad-cell > *{ max-width:100%; }
+/* 预设尺寸：用固定宽度居中；窄屏用 max-width 自适应防溢出 */
+html .ad-cell[data-size="300x250"]{ max-width:300px; }
+html .ad-cell[data-size="320x50"]{ max-width:320px; }
+html .ad-cell[data-size="160x600"]{ max-width:160px; }
+html .ad-cell[data-size="336x280"]{ max-width:336px; }
+html .ad-cell[data-size="250x250"]{ max-width:250px; }
+html .ad-cell[data-size="320x100"]{ max-width:320px; }
+html .ad-cell[data-size="728x90"]{ max-width:100%; }
+html .ad-cell[data-size="300x600"]{ max-width:300px; }
+html .ad-cell[data-size="468x60"]{ max-width:468px; }
+@media (max-width: 640px){
+  html .ad-cell{ max-width:100% !important; }
+}

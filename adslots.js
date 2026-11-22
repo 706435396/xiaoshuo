@@ -1,91 +1,83 @@
-/* 深夜文库 · 后台配置广告渲染器
- * 从 /api/adslots 读取管理后台保存的配置，渲染到 [data-ad-key] 格子。
- * - 无配置/未启用：格子保持隐藏，不留空白
- * - 图片模式：img + 可选跳转链接
- * - HTML 模式：写入代码并重新执行其中的 <script>（支持联盟异步脚本）
- * 本文件用 defer 加载，不阻塞页面。
+/* 深夜文库 · C 版动态广告网格渲染器
+ * 从 /api/adslots (v2) 读取后台配置，按三区（hero / cat / shelf）渲染广告位。
+ * - 每区是网格容器 [data-ad-zone]，可渲染任意数量广告位（后台可增删）
+ * - 广告位支持尺寸预设：auto 自适应 / 300x250 / 320x50 / ... / 728x90 通栏
+ * - 图片模式：img + 可选跳转；HTML 模式：写入代码并重建 script（支持联盟异步脚本）
+ * - 未启用或空内容的广告位不渲染；整区为空时容器隐藏（:empty 兜底）
+ * defer 加载，不阻塞页面。
  */
 (function () {
   'use strict';
 
   var API = '/api/adslots';
-  var DONE_ATTR = 'data-ad-rendered';
+  var ZONES = ['hero', 'cat', 'shelf'];
 
-  function render(host, slot) {
-    if (!slot || !slot.enabled || !slot.value) return; // 保持隐藏
+  // 图片尺寸映射（用于 <img> 的 width/height，帮助页面稳定布局）
+  var SIZE_MAP = {
+    '300x250': [300, 250], '320x50': [320, 50], '160x600': [160, 600],
+    '336x280': [336, 280], '250x250': [250, 250], '320x100': [320, 100],
+    '728x90': [728, 90], '300x600': [300, 600], '468x60': [468, 60]
+  };
 
-    host.innerHTML = '';
-    host.classList.remove('hidden');
-    host.style.display = '';
+  function makeCell(slot) {
+    var cell = document.createElement('div');
+    cell.className = 'ad-cell' + (slot.size === '728x90' || slot.size === '468x60' ? ' span-2' : '');
+    cell.setAttribute('data-size', slot.size || 'auto');
+    cell.setAttribute('data-ad-id', slot.id || '');
 
     if (slot.type === 'html') {
-      // HTML 代码：innerHTML 写入后，script 标签不会自动执行，需重建
-      host.innerHTML = slot.value;
-      var oldScripts = host.querySelectorAll('script');
-      var list = [].slice.call(oldScripts);
-      list.forEach(function (old) {
+      // HTML 模式：innerHTML 写入后 script 不自动执行，重建以触发
+      cell.innerHTML = slot.value;
+      var old = [].slice.call(cell.querySelectorAll('script'));
+      old.forEach(function (o) {
         var s = document.createElement('script');
-        // 复制属性（保留 async / src / data-* 等）
-        for (var i = 0; i < old.attributes.length; i++) {
-          var a = old.attributes[i];
-          s.setAttribute(a.name, a.value);
-        }
-        s.textContent = old.textContent;
-        old.parentNode.replaceChild(s, old);
+        for (var i = 0; i < o.attributes.length; i++) s.setAttribute(o.attributes[i].name, o.attributes[i].value);
+        s.textContent = o.textContent;
+        o.parentNode.replaceChild(s, o);
       });
     } else {
-      // 图片模式
       var img = document.createElement('img');
       img.src = slot.value;
       img.alt = slot.note || '广告';
       img.loading = 'lazy';
-      img.style.cssText = 'display:block;max-width:100%;height:auto;margin:0 auto;border-radius:6px';
+      var dim = SIZE_MAP[slot.size];
+      var css = 'display:block;max-width:100%;height:auto;margin:0 auto;border-radius:6px';
+      if (dim) { img.width = dim[0]; img.height = dim[1]; }
+      img.style.cssText = css;
       if (slot.link && /^https?:\/\//i.test(slot.link)) {
         var a = document.createElement('a');
         a.href = slot.link;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         a.appendChild(img);
-        host.appendChild(a);
+        cell.appendChild(a);
       } else {
-        host.appendChild(img);
+        cell.appendChild(img);
       }
     }
+    return cell;
   }
 
   function apply(data) {
-    if (!data || !data.slots) return;
-    var hosts = document.querySelectorAll('[data-ad-key]');
-    for (var i = 0; i < hosts.length; i++) {
-      (function (host) {
-        if (host.getAttribute(DONE_ATTR)) return;
-        host.setAttribute(DONE_ATTR, '1');
-        var key = host.getAttribute('data-ad-key');
-        // 无配置时确保隐藏（HTML 里默认带 hidden class）
-        var slot = data.slots[key];
-        if (!slot || !slot.enabled || !slot.value) {
-          host.classList.add('hidden');
-          host.innerHTML = '';
-          return;
-        }
-        render(host, slot);
-      })(hosts[i]);
-    }
+    if (!data || !data.zones) return;
+    ZONES.forEach(function (zone) {
+      var host = document.querySelector('[data-ad-zone="' + zone + '"]');
+      if (!host) return;
+      host.innerHTML = ''; // 幂等：重复调用不重复渲染
+      var list = (data.zones[zone] || []).filter(function (s) { return s && s.enabled && s.value; });
+      list.forEach(function (s) { host.appendChild(makeCell(s)); });
+    });
   }
 
   function load() {
     return fetch(API + '?t=' + Date.now(), { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(apply)
-      .catch(function () { /* 后台不可用时静默降级：所有格子保持隐藏 */ });
+      .catch(function () { /* 后台不可用：网格保持空，:empty 规则自动隐藏 */ });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', load);
-  } else {
-    load();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
 
-  // 供手动刷新调用（如后台保存后想立刻更新当前页）
-  window.SY_ADS = { refresh: load };
+  window.SY_ADS = { refresh: load, zones: ZONES };
 })();
