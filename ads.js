@@ -1,73 +1,106 @@
-/* 深夜文库 · 全站广告位集中配置
+/* 深夜文库 · 看书页动态广告渲染器（后台 /admin-ads 统一管理）
  * ============================================================
- * 只需修改本文件即可控制全站广告，不用逐个页面改代码。
+ * 从 /api/adslots 读取「看书页广告」两区，注入到看书场景的 data-ad-slot 容器：
+ *   reader-top    （TXT 阅读器 · 正文上方）  ┐
+ *   content-top   （书详情 / 章节页 · 正文上方）┴→ zones['reader-top']
+ *   reader-bottom （TXT 阅读器 · 正文下方）  ┐
+ *   content-bottom（书详情 / 章节页 · 正文下方）┴→ zones['reader-bottom']
  *
- * 【怎么启用】把 ENABLED 改成 true，并在 SLOTS 里填入广告联盟给你的代码。
- * 【怎么关闭】把 ENABLED 改回 false，全站广告立即消失，不留空白。
- *
- * 页面里凡是 <div data-ad-slot="名字"></div> 的容器，都会被自动填充。
- * 未填写代码的广告位不会显示，也不会占位置。
- *
- * 成人站注意：Google AdSense 基本不批成人内容。
- * 建议用对成人友好的联盟：ExoClick / Adsterra / TrafficJunky 等，
- * 它们通常给一段 <script> 或 <iframe>，原样粘到对应 SLOT 的字符串里即可。
+ * 未启用 / 无内容的容器自动隐藏（display:none），不留空白。
+ * HTML 模式：写入后重建 <script> 以触发联盟异步脚本；不支持 document.write 型。
+ * 与首页 adslots.js 共用同一份后台配置，但各页只渲染自己场景的区。
  * ============================================================
  */
 (function () {
   'use strict';
 
-  // 全站总开关：false=全部关闭（默认），true=启用下方已填写的广告位
-  var ENABLED = false;
+  var API = '/api/adslots';
 
-  // 各广告位的广告代码。留空字符串 '' 表示该位置不显示。
-  // 支持 HTML（iframe/ins/script 标签均可）。脚本标签在 innerHTML 中不执行，
-  // 如需执行 <script>，请改用联盟提供的"异步加载代码片段"并在页面 head 引入。
-  var SLOTS = {
-    // 首页：搜索栏下方横幅
-    'home-top': '',
-    // 首页：书列表中部
-    'home-mid': '',
-    // 书详情/章节页：正文上方横幅
-    'content-top': '',
-    // 书详情/章节页：正文下方横幅
-    'content-bottom': '',
-    // 阅读器：章节正文上方
-    'reader-top': '',
-    // 阅读器：章节正文下方
-    'reader-bottom': '',
-    // 各页侧边/页脚通用
-    'sidebar': '',
-    'footer': ''
+  // 容器名 → 后台 zone key（同一正文上/下区覆盖阅读器与书页/章节页两套命名）
+  var SLOT_ZONE = {
+    'reader-top': 'reader-top',
+    'content-top': 'reader-top',
+    'reader-bottom': 'reader-bottom',
+    'content-bottom': 'reader-bottom'
   };
 
-  function inject() {
-    var slots = document.querySelectorAll('[data-ad-slot]');
-    for (var i = 0; i < slots.length; i++) {
-      var el = slots[i];
-      var name = el.getAttribute('data-ad-slot');
-      var code = ENABLED ? (SLOTS[name] || '') : '';
-      if (!code) {
-        el.style.display = 'none';
-        continue;
+  var SIZE_MAP = {
+    '300x250': [300, 250], '320x50': [320, 50], '160x600': [160, 600],
+    '336x280': [336, 280], '250x250': [250, 250], '320x100': [320, 100],
+    '728x90': [728, 90], '300x600': [300, 600], '468x60': [468, 60]
+  };
+
+  function makeCell(slot) {
+    var cell = document.createElement('div');
+    cell.className = 'ad-cell';
+    cell.setAttribute('data-size', slot.size || 'auto');
+    cell.setAttribute('data-ad-id', slot.id || '');
+    cell.style.cssText = 'max-width:100%;margin:0 auto;overflow:hidden';
+
+    if (slot.type === 'html') {
+      cell.innerHTML = slot.value;
+      // innerHTML 里的 script 不执行，重建以触发（联盟异步脚本）
+      var old = [].slice.call(cell.querySelectorAll('script'));
+      old.forEach(function (o) {
+        var s = document.createElement('script');
+        for (var i = 0; i < o.attributes.length; i++) s.setAttribute(o.attributes[i].name, o.attributes[i].value);
+        s.textContent = o.textContent;
+        o.parentNode.replaceChild(s, o);
+      });
+    } else {
+      var img = document.createElement('img');
+      img.src = slot.value;
+      img.alt = slot.note || '广告';
+      img.loading = 'lazy';
+      var dim = SIZE_MAP[slot.size];
+      img.style.cssText = 'display:block;max-width:100%;height:auto;margin:0 auto;border-radius:6px';
+      if (dim) { img.width = dim[0]; img.height = dim[1]; }
+      if (slot.link && /^https?:\/\//i.test(slot.link)) {
+        var a = document.createElement('a');
+        a.href = slot.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        a.appendChild(img); cell.appendChild(a);
+      } else {
+        cell.appendChild(img);
       }
-      el.innerHTML = code;
-      el.style.display = '';
-      // 标记已注入，便于联盟脚本按容器查找
-      el.setAttribute('data-ad-filled', '1');
     }
+    return cell;
   }
 
-  // DOM 就绪后注入（本脚本统一用 defer，通常 DOM 已就绪）
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inject);
-  } else {
-    inject();
+  function apply(data) {
+    var zones = (data && data.zones) || {};
+    var hosts = document.querySelectorAll('[data-ad-slot]');
+    [].forEach.call(hosts, function (host) {
+      var name = host.getAttribute('data-ad-slot');
+      var zone = SLOT_ZONE[name];
+      if (!zone) return; // 非看书场景的 slot（首页等）不归本渲染器管
+      host.innerHTML = ''; // 幂等
+      var list = (zones[zone] || []).filter(function (s) { return s && s.enabled && s.value; });
+      if (!list.length) { host.style.display = 'none'; return; }
+      list.forEach(function (s) { host.appendChild(makeCell(s)); });
+      host.style.display = '';
+      host.setAttribute('data-ad-filled', '1');
+    });
   }
 
-  // 暴露给控制台/后续脚本：window.SY_ADS.refresh() 可重新注入
-  window.SY_ADS = {
-    enabled: ENABLED,
-    slots: SLOTS,
-    refresh: inject
-  };
+  function hideAll() {
+    var hosts = document.querySelectorAll('[data-ad-slot]');
+    [].forEach.call(hosts, function (host) {
+      if (SLOT_ZONE[host.getAttribute('data-ad-slot')]) {
+        host.style.display = 'none';
+      }
+    });
+  }
+
+  function load() {
+    return fetch(API + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(apply)
+      .catch(function () { hideAll(); }); // API 不可用：全部隐藏，不留空白
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
+
+  // 兼容旧调用与控制台调试
+  window.SY_ADS = { refresh: load, zones: ['reader-top', 'reader-bottom'] };
 })();
