@@ -20,6 +20,7 @@
   // ===== 1) Adsterra 320x50 横幅 =====
   // atOptions 必须先定义，再加载 invoke 脚本（顺序不能反）
   if (fmt.banner !== false) {
+    w('<div class="sy-ad-float" style="margin:0 auto;text-align:center;width:300px">');
     w('<script>atOptions={' +
       "'key':'0314b76eee5da2a4c14f696662cbe285'," +
       "'format':'iframe'," +
@@ -28,13 +29,14 @@
       "'params':{}" +
       '};<\/script>');
     w('<script data-cfasync="false" src="https://bauval.org/22/0314b76eee5da2a4c14f696662cbe285"><\/script>');
+    w('<\/div>');
   }
 
   // ===== 2) JuicyAds 300x250（adzone 1133796）=====
   // 官方顺序：jads.js → <ins> 占位 → push 命令，三者不能调换。
   // 用 div 包裹 ins 仅为居中显示，不影响 adzone 识别。
   if (fmt.juicy !== false) {
-    w('<div style="margin:16px auto;text-align:center;max-width:300px">');
+    w('<div class="sy-ad-float" style="margin:16px auto;text-align:center;max-width:300px">');
     w('<script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"><\/script>');
     w('<ins id="1133796" data-width="300" data-height="250"><\/ins>');
     w('<script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({\'adzone\':1133796});<\/script>');

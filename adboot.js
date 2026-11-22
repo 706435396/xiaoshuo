@@ -45,6 +45,32 @@
     return '<script ' + (extra || '') + ' data-cfasync="false" src="' + url + '"><\/script>';
   }
 
+  // ===== 阅读页专用：把底部广告收纳到左下悬浮栏 =====
+  // 仅 body 带 .sy-reader 时由下方脚本创建 .sy-ad-rail，其他页面无任何影响。
+  // 宽屏(≥1024px)左下固定、纵向排列；窄屏(<1024px)隐藏这些广告，保证手机阅读清爽。
+  w('<style>' +
+    '.sy-ad-rail{position:fixed;left:8px;top:76px;bottom:8px;width:306px;' +
+      'overflow-y:auto;overflow-x:hidden;z-index:30;display:flex;flex-direction:column;gap:12px;' +
+      'scrollbar-width:none}' +
+    '.sy-ad-rail::-webkit-scrollbar{display:none}' +
+    '.sy-ad-rail .sy-ad-float{width:300px;max-width:300px;flex:0 0 auto;margin:0!important}' +
+    '@media(max-width:1023px){.sy-reader .sy-ad-float{display:none!important}}' +
+  '<\/style>');
+  w('<script>(function(){' +
+    'function setup(){' +
+      'if(!document.body||!document.body.classList.contains("sy-reader"))return;' +
+      'if(window.innerWidth<1024)return;' +
+      'if(document.querySelector(".sy-ad-rail"))return;' +
+      'var ads=document.querySelectorAll(".sy-ad-float");' +
+      'if(!ads.length)return;' +
+      'var rail=document.createElement("div");rail.className="sy-ad-rail";' +
+      'document.body.appendChild(rail);' +
+      'for(var i=0;i<ads.length;i++)rail.appendChild(ads[i]);' +
+    '}' +
+    'if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",setup);' +
+    'else setup();' +
+  '})();<\/script>');
+
   // 1) 弹窗 Popunder —— 仅内容页
   if (FORMAT.popunder && (!POPUNDER_CONTENT_ONLY || isContent)) {
     w(ext('https://abscloud.org/1/0af312921b8958cf650f130cb9ee40f7'));
@@ -53,7 +79,7 @@
   // 2) 原生/信息流广告：脚本 + 对应容器 div
   if (FORMAT.native) {
     w(ext('https://bauval.org/21/c13d2e7fdaaf75d273ad382b3a8dba11', 'async="async"'));
-    w('<div id="container-c13d2e7fdaaf75d273ad382b3a8dba11"></div>');
+    w('<div class="sy-ad-float" id="container-c13d2e7fdaaf75d273ad382b3a8dba11"></div>');
   }
 
   // 3) 社交栏浮层
