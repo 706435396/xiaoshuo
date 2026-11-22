@@ -257,6 +257,7 @@ function bookPageHtml(book, preview, chData) {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<meta name="juicyads-site-verification" content="a57a2d3763d0bc82cc042c5cd227057a" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${esc(title)} - ${esc(author)} - 在线阅读 | 深夜文库</title>
@@ -402,6 +403,7 @@ function categoryPageHtml(cat, list, allCats) {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<meta name="juicyads-site-verification" content="a57a2d3763d0bc82cc042c5cd227057a" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${esc(title)}</title>
