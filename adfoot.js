@@ -12,7 +12,10 @@
 (function () {
   'use strict';
 
-  var cfg = window.SY_AD_CONFIG || { enabled: true, format: { banner: true } };
+  // 全站写死联盟广告已停用，统一由后台 /admin-ads 投放。
+  // 正常页面由 adboot.js 设置 SY_AD_CONFIG.enabled=false；此处兜底也默认不写，
+  // 防止个别只引本文件的页面仍写出联盟横幅。
+  var cfg = window.SY_AD_CONFIG || { enabled: false, format: { banner: false } };
   if (!cfg.enabled) return;
 
   var fmt = cfg.format || {};
