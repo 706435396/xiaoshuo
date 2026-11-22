@@ -23,8 +23,7 @@
   .avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff9500,#ff5f00);display:flex;align-items:center;justify-content:center;font-size:24px;color:#111;font-weight:600;margin-bottom:14px}
   .name{font-size:20px;font-weight:600}
   .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;margin-left:10px;vertical-align:middle}
-  .b-vip{background:#3a2a08;color:var(--orange);border:1px solid #6b4d0a}
-  .b-normal{background:#222;color:#aaa;border:1px solid #333}
+  .b-normal{background:#123c28;color:#5ad48a;border:1px solid #2c7a4b}
   .stats{display:flex;gap:8px}
   .stat{flex:1;background:#0a0a0a;border:1px solid var(--line);border-radius:10px;padding:14px 6px;text-align:center}
   .stat b{display:block;font-size:22px;color:var(--orange)}
@@ -52,8 +51,8 @@
   <div id="panel">
     <div class="card">
       <div class="avatar" id="avatar">读</div>
-      <div class="name"><span id="uname">—</span><span class="badge b-normal" id="vipBadge">普通用户</span></div>
-      <div class="hint" style="margin-top:6px" id="vipLine">会员状态加载中…</div>
+      <div class="name"><span id="uname">—</span><span class="badge b-normal" id="vipBadge">免费读者</span></div>
+      <div class="hint" style="margin-top:6px">本站全站免费，所有章节均可阅读。登录可同步收藏、评分与阅读进度。</div>
     </div>
 
     <div class="card">
@@ -67,11 +66,9 @@
     </div>
 
     <div class="card">
-      <div class="k" style="margin-bottom:6px">会员与账号</div>
+      <div class="k" style="margin-bottom:6px">账号信息</div>
       <div class="row"><span class="k">账号</span><span class="v" id="rowUser">—</span></div>
-      <div class="row"><span class="k">会员到期</span><span class="v" id="rowVip">—</span></div>
-      <a class="btn" href="/redeem">开通 / 续费会员</a>
-      <a class="btn ghost" href="/vip-info">会员权益说明</a>
+      <div class="row"><span class="k">阅读权限</span><span class="v">全站免费 · 无限制</span></div>
     </div>
 
     <div class="card">
@@ -123,18 +120,12 @@
     $('sRate').textContent = statCount('ebook_rating_');
     $('sProg').textContent = statCount('ebook_progress_');
 
+    // 全免费模式：不再查询会员状态，仅校验登录态是否有效
     const r = await apiCall('/me');
     if (r.status === 401) {
       doLogout(true);
       return;
     }
-    const d = r.data || {};
-    const isVip = !!d.isVip;
-    const badge = $('vipBadge');
-    if (isVip) { badge.textContent = '★ 会员'; badge.className = 'badge b-vip'; }
-    else { badge.textContent = '普通用户'; badge.className = 'badge b-normal'; }
-    $('vipLine').textContent = isVip ? ('会员有效期至 ' + (d.vipUntil || '—')) : '当前为普通用户，开通会员可解锁全部章节。';
-    $('rowVip').textContent = isVip ? (d.vipUntil || '长期有效') : '未开通';
   }
 
   async function doLogout(silent) {

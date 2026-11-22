@@ -1,4 +1,4 @@
-// 退出登录：清除会员 Cookie（前端仍会清 localStorage）
+// 退出登录：清除登录 Cookie（前端仍会清 localStorage）
 import { json } from './_shared.js';
 
 export async function onRequestPost() {

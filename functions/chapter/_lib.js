@@ -122,6 +122,7 @@ function pageShell({ title, description, keywords, canonical, ld, body }) {
 <meta name="rating" content="adult" />
 <link rel="canonical" href="${escAttr(canonical)}" />
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
+<script src="/ads.js" defer></script>
 <style>
   :root{ --bg:#0d0d0d; --card:#161616; --fg:#e5e5e5; --muted:#9a9a9a; --orange:#ff9500; --line:#262626; }
   *{box-sizing:border-box}
@@ -204,7 +205,9 @@ function chapterHtml(book, chapters, idx) {
     '<a href="/book/' + escAttr(id) + '">' + esc(bookTitle) + '</a> &gt; <span>第' + n + '章</span></div>' +
     '<h1>' + esc(chTitle) + '</h1>' +
     '<div class="booktitle">《' + esc(bookTitle) + '》 · ' + esc(author) + ' · 第 ' + n + ' / ' + total + ' 章</div>' +
+    '<div data-ad-slot="content-top" style="margin:14px 0;text-align:center"></div>' +
     '<div class="content">' + bodyText + '</div>' +
+    '<div data-ad-slot="content-bottom" style="margin:18px 0;text-align:center"></div>' +
     '<div class="nav">' + prev + '<a class="toc" href="/book/' + escAttr(id) + '">作品详情 / 目录</a>' + next + '</div>' +
     '<section class="chapters"><h2>《' + esc(bookTitle) + '》章节目录</h2><div class="ch-grid">' + chLinks + '</div></section>' +
     '<div class="foot"><a href="/">返回深夜文库首页</a> · 共 ' + total + ' 章<br />本站仅作书籍索引，请支持正版。</div>';
@@ -212,68 +215,4 @@ function chapterHtml(book, chapters, idx) {
   return pageShell({ title, description, keywords, canonical, ld, body });
 }
 
-// 付费墙页面：对所有人一致输出（不区分爬虫/用户，避免 cloaking）。
-// 首 N 章可试读，之后仅会员可读；未登录/非会员看到此页，正文不进入 HTML。
-function paywallHtml(book, chapters, idx, trialChapters) {
-  const id = String(book.id);
-  const bookTitle = book.title || ('书籍' + id);
-  const author = book.author || '佚名';
-  const category = book.category || '其他';
-  const ch = chapters[idx];
-  const chTitle = ch.title || ('第 ' + (idx + 1) + ' 章');
-  const n = idx + 1;
-  const total = chapters.length;
-
-  const title = bookTitle + ' ' + chTitle + ' 在线阅读 - 第' + n + '章 | 深夜文库';
-  const description = (bookTitle + '（' + author + '）' + chTitle + '，会员专享章节。').slice(0, 160);
-  const keywords = [bookTitle, author, chTitle, category + '小说', '在线阅读'].filter(Boolean).join(',');
-  const canonical = SITE + '/chapter/' + id + '/' + n;
-
-  const prev = idx > 0 ? '<a href="/chapter/' + id + '/' + (idx) + '">‹ 上一章</a>' : '<a class="dis">‹ 上一章</a>';
-  const next = idx < total - 1 ? '<a href="/chapter/' + id + '/' + (idx + 2) + '">下一章 ›</a>' : '<a class="dis">下一章 ›</a>';
-
-  // 目录：前 N 章可直接点，之后加锁标记
-  const chLinks = chapters.map((c, i) => {
-    const label = (i + 1) + '. ' + esc(c.title) + (i + 1 > trialChapters ? ' 🔒' : '');
-    return '<a href="/chapter/' + id + '/' + (i + 1) + '"' + (i === idx ? ' class="cur"' : '') + '>' + label + '</a>';
-  }).join('');
-
-  const ld = {
-    '@context': 'https://schema.org',
-    '@type': 'Chapter',
-    name: chTitle,
-    inLanguage: 'zh-CN',
-    url: canonical,
-    isPartOf: {
-      '@type': 'Book',
-      name: bookTitle,
-      author: { '@type': 'Person', name: author },
-      genre: category,
-      url: SITE + '/book/' + id
-    }
-  };
-
-  const payCard =
-    '<div class="crumb"><a href="/">深夜文库</a> &gt; <a href="/category/' + escAttr(catSlug(category)) + '">' + esc(category) + '</a> &gt; ' +
-    '<a href="/book/' + escAttr(id) + '">' + esc(bookTitle) + '</a> &gt; <span>第' + n + '章</span></div>' +
-    '<h1>' + esc(chTitle) + '</h1>' +
-    '<div class="booktitle">《' + esc(bookTitle) + '》 · ' + esc(author) + ' · 第 ' + n + ' / ' + total + ' 章</div>' +
-    '<div class="content" style="text-align:center;padding:46px 24px">' +
-      '<div style="font-size:44px;line-height:1;margin-bottom:14px">🔒</div>' +
-      '<div style="font-size:19px;font-weight:600;color:#ff9500;margin-bottom:12px">此章节为会员专享</div>' +
-      '<p style="color:#bbb;font-size:15px;line-height:1.9;margin:0 auto 8px;max-width:520px">' +
-        '《' + esc(bookTitle) + '》前 ' + trialChapters + ' 章可免费试读，后续章节需开通会员解锁。<br />' +
-        '已是会员？请登录后再读，会员权益自动生效。</p>' +
-      '<div style="margin-top:26px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">' +
-        '<a href="/vip-info" style="display:inline-block;background:#ff9500;color:#111;border-radius:8px;padding:11px 22px;font-size:15px;font-weight:600;text-decoration:none">了解会员权益 / 开通</a>' +
-        '<a href="/book/' + escAttr(id) + '" style="display:inline-block;background:transparent;color:#ff9500;border:1px solid #ff9500;border-radius:8px;padding:11px 22px;font-size:15px;text-decoration:none">返回作品详情</a>' +
-      '</div>' +
-    '</div>' +
-    '<div class="nav">' + prev + '<a class="toc" href="/book/' + escAttr(id) + '">作品详情 / 目录</a>' + next + '</div>' +
-    '<section class="chapters"><h2>《' + esc(bookTitle) + '》章节目录（🔒 为会员章节）</h2><div class="ch-grid">' + chLinks + '</div></section>' +
-    '<div class="foot"><a href="/">返回深夜文库首页</a> · 共 ' + total + ' 章<br />本站仅作书籍索引，请支持正版。</div>';
-
-  return pageShell({ title, description, keywords, canonical, ld, body: payCard });
-}
-
-export { getBooks, getBookText, buildChapters, chapterHtml, paywallHtml, esc };
+export { getBooks, getBookText, buildChapters, chapterHtml, esc };

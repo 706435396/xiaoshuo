@@ -46,6 +46,7 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
   <script src="/analytics.js" defer></script>
+  <script src="/ads.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-[#0d0d0d] dark:text-gray-200 transition-colors min-h-screen">
 
@@ -102,6 +103,9 @@
         <div id="shelfBody" class="hidden mt-3 space-y-3"></div>
       </section>
 
+      <!-- 广告位：列表区上方（未启用时自动隐藏，不留空白） -->
+      <div data-ad-slot="home-top" class="mb-4 text-center"></div>
+
       <!-- 今日推荐（数据来自 promo/out.json，由 GitHub Actions 每日更新；失败时前端同源降级） -->
       <section id="dailyRec" class="hidden mb-8 rounded-xl bg-gradient-to-r from-[#ff9500]/5 to-transparent dark:from-[#ff9500]/10 border border-[#ff9500]/25 p-4">
         <div class="flex items-center justify-between mb-3">
@@ -137,6 +141,9 @@
 
       <!-- 书籍列表（紧凑文字行，无封面，两列） -->
       <div id="bookGrid" class="hidden grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
+
+      <!-- 广告位：列表区下方（未启用时自动隐藏，不留空白） -->
+      <div data-ad-slot="home-mid" class="mt-4 text-center"></div>
 
       <!-- 空状态 -->
       <div id="empty" class="hidden flex-col items-center justify-center py-20 text-gray-400">
@@ -372,9 +379,7 @@
     ).join('');
     const t = ((b.type || '').toLowerCase());
     const info = TYPE_BADGE[t] || { label: (b.type || '?').toUpperCase(), cls: 'bg-gray-600' };
-    const vipBadge = b.free === true
-      ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white bg-emerald-500">免费</span>'
-      : '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white bg-[#ff9500]">会员</span>';
+    const vipBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold text-white bg-emerald-500">免费</span>';
     const readHref = 'read.html?id=' + b.id + '&u=' + encodeURIComponent(b.url || '') + '&t=' + encodeURIComponent(b.title || '') + (b.free ? '&free=1' : '');
     return '<div class="card relative block rounded-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] hover:border-[#ff9500]/70 dark:hover:border-[#ff9500]/70 transition px-3 py-2.5 group cursor-pointer" data-read="' + readHref.replace(/"/g, '&quot;') + '">' +
       '<div class="flex items-start justify-between gap-2">' +

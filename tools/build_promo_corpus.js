@@ -3,7 +3,7 @@
  * build_promo_corpus.js — 生成 30 本代表性小说的中英文推广文案库
  *
  * 用途：为 X（Twitter）自动化引流准备第一批测试文案，输出 promo/x-corpus.json。
- * 每行 = 一本书 × 一种内容角度（推荐 / 悬念 / 互动 / 英文发现 / 会员转化），
+ * 每行 = 一本书 × 一种内容角度（推荐 / 悬念 / 英文发现 / 全免费+账户），
  * 字段对齐方案里的 Posts 工作表，可直接导入 Google Sheets 或 n8n。
  *
  * 合规（沿用站内 generate_promo.js 的规则，不可关闭）：
@@ -109,8 +109,8 @@ function makePosts(b) {
       image_url: '', target_url: utm('en_fiction', `en_${b.id}`), utm_campaign: 'en_fiction'
     },
     {
-      post_id: `${b.id}-cn-vip`, book_id: b.id, language: 'zh', post_type: '会员',
-      post_text: `《${b.title}》正在深夜文库连载。\n📖 浏览目录 · 📚 免费试读 · ⭐ 创建阅读账户 · 🔖 同步进度\n欢迎成年读者探索原创故事：${utm('cn_member', `vip_${b.id}`)}`,
+      post_id: `${b.id}-cn-vip`, book_id: b.id, language: 'zh', post_type: '全免费',
+      post_text: `《${b.title}》正在深夜文库连载。\n📖 浏览目录 · 📚 全本免费 · ⭐ 创建阅读账户 · 🔖 同步进度\n欢迎成年读者探索原创故事：${utm('cn_member', `vip_${b.id}`)}`,
       image_url: '', target_url: utm('cn_member', `vip_${b.id}`), utm_campaign: 'cn_member'
     }
   ];

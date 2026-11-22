@@ -87,7 +87,7 @@ function blurb(book) {
     return book.intro.replace(/\s+/g, ' ').slice(0, 90);
   }
   const who = book.author ? `${book.author} 著，` : '';
-  return `${who}${book.category}题材，深夜文库提供完整章节目录与免费在线试读`;
+  return `${who}${book.category}题材，深夜文库提供完整章节目录与全本免费在线阅读`;
 }
 
 function main() {

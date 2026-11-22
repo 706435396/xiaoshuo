@@ -171,7 +171,7 @@ function bookPageHtml(book, preview, chData) {
   const characters = extractCharacters(firstText, category);
 
   const desc = (title + '，作者' + author + '，' + category + '类' + type +
-    '电子书。' + (intro || '提供在线阅读、章节目录与正文试读。')).slice(0, 160);
+    '电子书。' + (intro || '提供在线阅读、章节目录与正文预览。')).slice(0, 160);
   const keywords = [title, author, category, '在线阅读', '小说', type].filter(Boolean).join(',');
 
   const readUrl = '../read?id=' + encodeURIComponent(id) +
@@ -212,7 +212,7 @@ function bookPageHtml(book, preview, chData) {
   let previewSection = '';
   if (preview && preview.first) {
     previewSection =
-      '<section class="block"><h2 class="sec-title">正文试读</h2>' +
+      '<section class="block"><h2 class="sec-title">正文预览</h2>' +
       '<div class="preview-text">' + esc(preview.first) + '…</div></section>';
   }
 
@@ -266,6 +266,7 @@ function bookPageHtml(book, preview, chData) {
 <link rel="canonical" href="${SITE}/book/${id}" />
 ${ogTags}
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+<script src="/ads.js" defer></script>
 <style>
   :root{ --bg:#0d0d0d; --card:#161616; --fg:#e5e5e5; --muted:#9a9a9a; --orange:#ff9500; --line:#262626; }
   *{box-sizing:border-box}
@@ -303,7 +304,7 @@ ${ogTags}
   <div class="sub">
     <span class="badge">${esc(type)}</span>
     <span class="badge">${esc(category)}</span>
-    ${book.free ? '<span class="badge" style="color:#5ad48a;border-color:#2c7a4b">全书免费</span>' : '<span class="badge" style="color:var(--orange);border-color:var(--orange)">会员 · 前3章试读</span>'}
+    <span class="badge" style="color:#5ad48a;border-color:#2c7a4b">全本免费</span>
     ${book.hot ? '<span class="badge" style="color:var(--orange);border-color:var(--orange)">热门</span>' : ''}
   </div>
 
@@ -314,6 +315,7 @@ ${ogTags}
   ${characters ? '<div class="meta-row"><b>主要人物：</b>' + esc(characters) + '</div>' : ''}
   ${intro ? '<div class="intro"><b>简介：</b>' + esc(intro) + '</div>' : ''}
 
+  <div data-ad-slot="content-top" style="margin:14px 0;text-align:center"></div>
   <a class="btn" href="${escAttr(readUrl)}">▶ 开始阅读</a>
   <p class="meta-row">${esc(formatNote)}</p>
 
@@ -327,6 +329,7 @@ ${ogTags}
     <ul class="rel-list">${rel}</ul>
   </section>
 
+  <div data-ad-slot="content-bottom" style="margin:18px 0;text-align:center"></div>
   <div class="foot"><a href="../">返回深夜文库首页</a> · 共 ${books.length} 本在线小说<br />
     <a href="../privacy">隐私政策</a> · <a href="../dmca">版权投诉</a> · <a href="../report">内容举报/审核</a></div>
 </div>
@@ -348,8 +351,8 @@ function categoryPageHtml(cat, list, allCats) {
   const n = list.length;
   const slug = catSlug(cat);
   const title = cat + '小说在线阅读_' + cat + '小说大全 - 深夜文库';
-  const desc = (cat + '小说在线阅读，本站收录 ' + n + ' 本' + cat + '类电子书，提供章节目录、正文试读与在线阅读。' +
-    cat + '小说大全，按更新排序，免费在线看。').slice(0, 160);
+  const desc = (cat + '小说在线阅读，本站收录 ' + n + ' 本' + cat + '类电子书，提供章节目录、正文预览与在线阅读。' +
+    cat + '小说大全，按更新排序，全站免费在线看。').slice(0, 160);
   const keywords = [cat + '小说', cat + '小说在线阅读', cat + '小说大全', cat + '电子书', '在线阅读', '小说'].join(',');
 
   const bookLis = list.map(b =>
@@ -405,6 +408,7 @@ function categoryPageHtml(cat, list, allCats) {
 <link rel="canonical" href="${SITE}/category/${slug}" />
 ${catOgTags}
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+<script src="/ads.js" defer></script>
 <style>
   :root{ --bg:#0d0d0d; --card:#161616; --fg:#e5e5e5; --muted:#9a9a9a; --orange:#ff9500; --line:#262626; }
   *{box-sizing:border-box}
@@ -430,7 +434,7 @@ ${catOgTags}
 <div class="wrap">
   <div class="crumb"><a href="../">深夜文库</a> &gt; <span>${esc(cat)}</span></div>
   <h1><em>${esc(cat)}</em>小说在线阅读</h1>
-  <p class="lead">${esc(desc)} 共收录 <strong style="color:var(--orange)">${n}</strong> 本${esc(cat)}小说，点击书名可查看详情、章节目录与正文试读。</p>
+  <p class="lead">${esc(desc)} 共收录 <strong style="color:var(--orange)">${n}</strong> 本${esc(cat)}小说，点击书名可查看详情、章节目录与正文预览。</p>
 
   <section class="block">
     <h2 class="sec-title">${esc(cat)}小说列表（共 ${n} 本）</h2>
@@ -442,6 +446,7 @@ ${catOgTags}
     <div class="cats">${other}</div>
   </section>
 
+  <div data-ad-slot="footer" style="margin:18px 0;text-align:center"></div>
   <div class="foot"><a href="../">返回深夜文库首页</a> · 全站共 ${books.length} 本在线小说</div>
 </div>
 </body>

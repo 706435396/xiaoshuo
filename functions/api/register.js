@@ -15,12 +15,11 @@ export async function onRequestPost({ request, env }) {
 
   const salt = crypto.randomUUID();
   const hash = await sha256(salt + pwd);
-  await env.USER_DATA.put('user:' + name, JSON.stringify({ salt, hash, created: Date.now(), vipExp: 0 }));
+  await env.USER_DATA.put('user:' + name, JSON.stringify({ salt, hash, created: Date.now() }));
 
   const token = newToken();
   await env.USER_DATA.put('sess:' + token, JSON.stringify({ user: name, exp: Date.now() + TOKEN_TTL }));
   const res = json({ token, username: name });
-  // 同时写入 Cookie，供章节页服务端鉴权（页面跳转无法带 Authorization 头）
   res.headers.append('Set-Cookie', `sy_token=${token}; Path=/; Max-Age=${Math.floor(TOKEN_TTL / 1000)}; HttpOnly; SameSite=Lax; Secure`);
   return res;
 }
