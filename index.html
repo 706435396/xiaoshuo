@@ -141,13 +141,16 @@
       <div id="pagination" class="hidden flex flex-wrap justify-center items-center gap-1.5 mt-8"></div>
     </div>
 
-    <!-- 右侧：我的书架侧栏（桌面） -->
-    <aside id="deskShelf" class="hidden lg:block w-56 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto card-shadow rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-4">
-      <h3 class="text-sm font-medium mb-3 text-gray-800 dark:text-gray-100">我的书架</h3>
-      <div id="deskShelfBody" class="space-y-4 text-sm"></div>
-      <!-- 右侧书架栏下方：C 版 shelf 广告网格（后台 /admin-ads 配置，可增删） -->
-      <div data-ad-zone="shelf" class="ad-grid ad-grid-shelf mt-4"></div>
-    </aside>
+    <!-- 右侧：桌面侧栏容器（书架与广告各自独立，不再连成一体） -->
+    <div class="hidden lg:block w-56 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4">
+      <!-- 我的书架卡片 -->
+      <aside id="deskShelf" class="card-shadow rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-4">
+        <h3 class="text-sm font-medium mb-3 text-gray-800 dark:text-gray-100">我的书架</h3>
+        <div id="deskShelfBody" class="space-y-4 text-sm"></div>
+      </aside>
+      <!-- shelf 广告网格：独立于书架卡片之外，留出间距，不与书架连在一起（后台 /admin-ads 配置，可增删） -->
+      <div data-ad-zone="shelf" class="ad-grid ad-grid-shelf"></div>
+    </div>
   </main>
 
   <footer class="max-w-7xl mx-auto px-4 py-8 text-center text-xs text-gray-400 lg:pr-[15rem]">
