@@ -25,9 +25,10 @@
     popunder: true,  // 弹窗（abscloud.org/1）
     native:   true,  // 信息流/原生（bauval.org/21 + container div）
     social:   true   // 社交栏浮层（bauval.org/14）
-    // 320x50 横幅在 adfoot.js 中，开关同步读取本文件的 ENABLED/FORMAT.banner
+    // Adsterra 320x50 横幅与 JuicyAds 300x250 在 adfoot.js 中，开关读取本文件的 FORMAT.banner / FORMAT.juicy
   };
-  FORMAT.banner = true; // 320x50 横幅（atOptions + bauval.org/22）
+  FORMAT.banner = true; // Adsterra 320x50 横幅（atOptions + bauval.org/22）
+  FORMAT.juicy  = true; // JuicyAds 300x250（ins#1133796 + jads.js push）
 
   // ===== 弹窗只在内容页（书页 / 阅读器 / 章节页）=====
   var POPUNDER_CONTENT_ONLY = true;
