@@ -49,6 +49,10 @@
   .status{font-size:12px;color:var(--adm-dim)}
   .status.ok{color:#6ee7b7}
   .status.err{color:#fca5a5}
+  .tabs{display:flex;gap:8px;border-bottom:1px solid var(--adm-line);padding-bottom:2px}
+  .tab{border:1px solid var(--adm-line);background:rgba(167,139,250,.08);color:var(--adm-dim);padding:8px 18px;border-radius:9px 9px 0 0;cursor:pointer;font-size:13px;transition:.15s}
+  .tab:hover{background:rgba(167,139,250,.18)}
+  .tab.active{background:linear-gradient(90deg,rgba(167,139,250,.92),rgba(34,211,238,.78));color:#0b0818;font-weight:700;border-color:transparent}
   .zone{margin-top:18px}
   .zone-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
   .zone-name{font-size:15px;font-weight:700;color:#c4b5fd}
@@ -96,7 +100,7 @@
   <div class="adm-head">
     <div>
       <div class="adm-title">深夜文库 · 广告管理</div>
-      <div class="adm-sub">C 版三区动态网格 · 可增删广告位 · 三端预览 · 数据存 Cloudflare KV</div>
+      <div class="adm-sub">首页三区 + 看书两区 · 可增删广告位 · 三端预览 · 数据存 Cloudflare KV</div>
     </div>
     <a href="/" target="_blank">查看首页 ↗</a>
   </div>
@@ -124,16 +128,25 @@
       </div>
     </div>
 
+    <div class="panel" style="margin-top:12px;padding-bottom:0">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-group="home">首页广告</button>
+        <button class="tab" data-group="read">看书页广告</button>
+      </div>
+    </div>
+
     <div id="zoneRoot"></div>
 
     <div class="help">
       <b>使用说明</b>
       <ul>
-        <li><b>三个区</b>：<code>顶部 hero</code>（主区 Tabs 上方，桌面两列/手机单列）、<code>左侧 cat</code>（分类栏下，约 208px）、<code>右侧 shelf</code>（书架栏下，约 224px）。每区可任意「添加广告位」或「删除」。</li>
+        <li><b>两组标签页</b>：<code>首页广告</code> 与 <code>看书页广告</code>，互不干扰；「保存全部」会一次保存两组所有区。</li>
+        <li><b>首页三区</b>：<code>顶部 hero</code>（主区 Tabs 上方，桌面两列/手机单列）、<code>左侧 cat</code>（分类栏下，约 208px）、<code>右侧 shelf</code>（书架栏下，约 224px）。</li>
+        <li><b>看书两区</b>：<code>正文上方 reader-top</code>、<code>正文下方 reader-bottom</code>。同一份配置自动作用于 TXT 阅读器（reader-top/bottom）与书详情/章节页（content-top/bottom），无需改书页。建议 320×50 横幅或 300×250 中矩形。</li>
         <li><b>图片模式</b>：内容填图片直链，链接填点击跳转地址；选尺寸预设后按该尺寸居中显示。</li>
         <li><b>HTML 模式</b>：粘贴联盟代码，支持异步脚本（<code>&lt;ins&gt;+jads.js</code>、<code>container+脚本</code>）与 iframe。<b>不支持</b> <code>document.write</code> 型（如旧版 atOptions），会清空整页；请用 iframe 版。</li>
         <li><b>尺寸预设</b>：auto 为自适应（图片按容器缩放）；固定尺寸按像素居中，窄屏自动缩到 100% 宽防溢出；<code>728×90 / 468×60</code> 为通栏，占满整行。</li>
-        <li><b>三端预览</b>：点「预览三端」会先自动保存，再按 PC 1440 / 笔记本 1280 / 手机 390 三种视口加载真实首页，切换标签查看。</li>
+        <li><b>三端预览</b>：点「预览三端」会先自动保存，再按 PC 1440 / 笔记本 1280 / 手机 390 三种视口加载当前标签页对应的真实页面（首页标签→首页、看书标签→阅读器），切换标签查看。</li>
         <li>只有勾选「启用」且有内容的广告位会显示；未启用的不占位。改动需保存后才上线上生效。</li>
       </ul>
     </div>
@@ -172,10 +185,14 @@
   var API = '/api/adslots';
 
   var ZONES = [
-    { key:'hero',  name:'顶部 hero 网格',  pos:'主区 Tabs 上方 · 桌面两列 / 手机单列 · 建议 300×250 或 320×50' },
-    { key:'cat',   name:'左侧 cat 网格',   pos:'左侧分类栏下方 · 栏宽约 208px · 建议窄图 / 160×600 竖幅' },
-    { key:'shelf', name:'右侧 shelf 网格', pos:'右侧书架栏下方 · 栏宽约 224px · 建议窄图 / 300×250' }
+    { key:'hero',  group:'home', name:'顶部 hero 网格',  pos:'主区 Tabs 上方 · 桌面两列 / 手机单列 · 建议 300×250 或 320×50' },
+    { key:'cat',   group:'home', name:'左侧 cat 网格',   pos:'左侧分类栏下方 · 栏宽约 208px · 建议窄图 / 160×600 竖幅' },
+    { key:'shelf', group:'home', name:'右侧 shelf 网格', pos:'右侧书架栏下方 · 栏宽约 224px · 建议窄图 / 300×250' },
+    { key:'reader-top',    group:'read', name:'正文上方 · reader-top',    pos:'阅读器正文上方 / 书详情·章节页正文上方 · 建议 320×50 横幅 / 300×250' },
+    { key:'reader-bottom', group:'read', name:'正文下方 · reader-bottom', pos:'阅读器正文下方 / 书详情·章节页正文下方 · 建议 320×50 横幅 / 300×250' }
   ];
+  var GROUPS = ['home','read'];
+  var curGroup = 'home';
   var SIZES = [
     ['auto','自适应'],['300x250','300×250 中矩形'],['320x50','320×50 横幅'],
     ['160x600','160×600 竖幅'],['336x280','336×280 大矩形'],['250x250','250×250 方形'],
@@ -247,6 +264,7 @@
       var list=(data.zones && data.zones[z.key])||[];
       var sec=document.createElement('section');
       sec.className='zone panel';
+      sec.setAttribute('data-group', z.group || 'home');
       sec.innerHTML=
         '<div class="zone-hd">'+
           '<span class="zone-name">'+z.name+'</span>'+
@@ -307,7 +325,21 @@
       });
       root.appendChild(sec);
     });
+    applyGroupVisibility();
   }
+
+  // 按当前标签页显示对应分组的 zone
+  function applyGroupVisibility(){
+    [].forEach.call($('zoneRoot').children,function(sec){
+      sec.style.display=(sec.getAttribute('data-group')===curGroup)?'':'none';
+    });
+    [].forEach.call(document.querySelectorAll('#tabs .tab'),function(t){
+      t.classList.toggle('active', t.getAttribute('data-group')===curGroup);
+    });
+  }
+  [].forEach.call(document.querySelectorAll('#tabs .tab'),function(t){
+    t.addEventListener('click',function(){ curGroup=t.getAttribute('data-group'); applyGroupVisibility(); });
+  });
 
   function collect(){
     var zones={};
@@ -365,15 +397,17 @@
   $('saveBtn').addEventListener('click',function(){ save(false); });
 
   $('clearBtn').addEventListener('click',async function(){
-    if(!confirm('确定清空全部三区广告位？（立即生效，不可撤销）')) return;
+    if(!confirm('确定清空全部两组（首页三区 + 看书两区）广告位？（立即生效，不可撤销）')) return;
     try{
+      var emptyZones={};
+      ZONES.forEach(function(z){ emptyZones[z.key]=[]; });
       var res=await fetch(API,{
         method:'POST',headers:{'Content-Type':'application/json','X-Ad-Pass':pass},
-        body:JSON.stringify({zones:{hero:[],cat:[],shelf:[]}})
+        body:JSON.stringify({zones:emptyZones})
       });
       var d=await res.json();
       if(!res.ok||!d.ok){ toast('清空失败：'+(d.error||res.status)); return; }
-      buildForm({zones:{hero:[],cat:[],shelf:[]}});
+      buildForm({zones:emptyZones});
       setStatus($('saveStatus'),'已清空全部广告位','ok'); toast('已清空');
     }catch(e){ toast('清空失败：'+e.message); }
   });
@@ -401,7 +435,9 @@
   }
   function loadPreview(){
     previewTs=Date.now();
-    $('previewFrame').src='/index.html?adpreview='+previewTs;
+    // 首页标签→首页（看 hero/cat/shelf）；看书标签→阅读器（带 id=1 看 reader-top/bottom）
+    var page=(curGroup==='read')?('/read.html?id=1&adpreview='+previewTs):('/index.html?adpreview='+previewTs);
+    $('previewFrame').src=page;
     fitPreview();
   }
   function openPreview(){
