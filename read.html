@@ -289,18 +289,44 @@
     return;
   }
 
-  // 取书籍信息：带 u 参数则免下载 books.json 直接读；否则回退查 books.json
+  // 取书籍信息（含历史坏链自愈）：
+  // books.json 是权威数据源（1503 本 url 全部有效）。带 u 参数的链接一律先按标题/id 反查
+  // books.json 拿到正确 url，从而自愈历史坏链（u 指向不存在的损坏文件、双重编码路径等）。
+  // 仅在 books.json 查不到时才回退用 u 参数原值（兼容库外的临时链接）。
+  function fromPreset() {
+    const m = (presetUrl.split('?')[0].match(/\.([A-Za-z0-9]+)$/) || [])[1] || '';
+    return { id: id || '', title: presetTitle || '阅读器', url: presetUrl, type: m.toLowerCase(), free: params.get('free') === '1' };
+  }
+  function loadBooks() {
+    return fetch('books.json').then(r => r.json()).then(books => Array.isArray(books) ? books : []);
+  }
+  // 从 books.json 匹配：优先精确匹配 u（说明链接本身是对的），其次标题，最后 id
+  function pickFromList(list) {
+    if (presetUrl) {
+      const byUrl = list.find(b => b.url === presetUrl);
+      if (byUrl) return byUrl;
+    }
+    const norm = s => String(s || '').replace(/[《》\s<>]/g, '').toLowerCase();
+    if (presetTitle) {
+      const byTitle = list.find(b => norm(b.title) === norm(presetTitle));
+      if (byTitle) return byTitle;
+    }
+    if (id) {
+      const byId = list.find(b => String(b.id) === String(id));
+      if (byId) return byId;
+    }
+    return null;
+  }
   function getBook() {
-    return new Promise((resolve, reject) => {
-      if (presetUrl) {
-        const m = (presetUrl.split('?')[0].match(/\.([A-Za-z0-9]+)$/) || [])[1] || '';
-        resolve({ id: id || '', title: presetTitle || '阅读器', url: presetUrl, type: m.toLowerCase(), free: params.get('free') === '1' });
-        return;
-      }
-      fetch('books.json').then(r => r.json()).then(books => {
-        const book = (Array.isArray(books) ? books : []).find(b => String(b.id) === String(id));
-        if (book) resolve(book); else reject(new Error('notfound'));
-      }).catch(reject);
+    return loadBooks().then(list => {
+      const book = pickFromList(list);
+      if (book) return book;                       // 权威数据（自动修正坏链）
+      if (presetUrl) return fromPreset();          // 库外链接：仍尝试原 u
+      throw new Error('notfound');
+    }).catch(err => {
+      // books.json 加载失败时仍可尝试 u 参数，保证纯 u 链接可用
+      if (presetUrl) return fromPreset();
+      throw err;
     });
   }
 

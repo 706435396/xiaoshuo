@@ -22,7 +22,7 @@
 
   // ===== 单格式开关 =====
   var FORMAT = {
-    popunder: true,  // 弹窗（abscloud.org/1）
+    popunder: false, // 弹窗（abscloud.org/1）—— 已关闭：点击触发弹窗严重打断阅读，2026-11-22
     native:   true,  // 信息流/原生（bauval.org/21 + container div）
     social:   true   // 社交栏浮层（bauval.org/14）
     // Adsterra 320x50 横幅与 JuicyAds 300x250 在 adfoot.js 中，开关读取本文件的 FORMAT.banner / FORMAT.juicy
