@@ -1,0 +1,325 @@
+/* ============================================================
+ * 深夜文库 · 黑暗异次元主题 (DARK / OTHERWORLD)
+ * ============================================================
+ * 目标：把全站统一成「深空紫黑 + 星云霓虹 + 玻璃拟态 + 微光边框」的异次元风格。
+ * 设计原则：
+ *   1. 背景是深空，不是纯黑——用多层径向渐变模拟星云，固定不随滚动。
+ *   2. 卡片/侧栏是半透明玻璃，边框带一点紫青冷光，避免"实心块"的廉价感。
+ *   3. 品牌橙保留为强调色，但加了一层紫青光晕，融入冷色调。
+ *   4. 阅读正文区降低发光/装饰强度，保证长时间阅读不累眼。
+ *   5. 用 :where()/属性选择器做「渐进覆盖」，不依赖改 1505 个书页的内联 CSS。
+ *
+ * 覆盖策略：用 html:root / html.dark 提高特异性，压过书页内联的 :root{--bg...}
+ * 以及 Tailwind 的 bg-white / dark:bg-[#...] 类。所有规则集中在文件末尾。
+ * ============================================================ */
+
+/* ---------- 1. 主题变量 ---------- */
+:root, html:root{
+  --sy-void:      #06050d;   /* 深空底 */
+  --sy-void-2:    #0a0818;   /* 深空次层 */
+  --sy-nebula-1:  rgba(107, 52, 205, .30); /* 紫星云 */
+  --sy-nebula-2:  rgba(14, 116, 164, .20); /* 青星云 */
+  --sy-nebula-3:  rgba(157, 23, 125, .16); /* 品红星云 */
+  --sy-surface:   rgba(18, 15, 34, .82);   /* 玻璃卡 */
+  --sy-surface-2: rgba(26, 22, 48, .78);
+  --sy-line:      rgba(148, 120, 255, .20);
+  --sy-line-hi:   rgba(148, 120, 255, .48);
+  --sy-text:      #eae7ff;
+  --sy-text-2:    #c5c0e8;
+  --sy-muted:     #918cb6;
+  --sy-orange:    #ff9500;
+  --sy-violet:    #a78bfa;
+  --sy-cyan:      #22d3ee;
+  --sy-glow:      0 0 22px rgba(167, 139, 250, .18);
+  --sy-ring:      inset 0 1px 0 rgba(255,255,255,.045), 0 0 0 1px var(--sy-line);
+}
+
+/* ---------- 2. 深空星云背景 + 星点 + 网格（body 固定层） ---------- */
+html body,
+html.dark body,
+body.sy-reader{
+  background-color: var(--sy-void) !important;
+  background-image:
+    /* 星点（固定视口，模拟繁星） */
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,.55), transparent),
+    radial-gradient(1px 1px at 34% 72%, rgba(199,210,254,.45), transparent),
+    radial-gradient(1.5px 1.5px at 58% 32%, rgba(34,211,238,.50), transparent),
+    radial-gradient(1px 1px at 77% 63%, rgba(255,255,255,.42), transparent),
+    radial-gradient(1px 1px at 91% 24%, rgba(167,139,250,.55), transparent),
+    radial-gradient(1px 1px at 23% 88%, rgba(255,255,255,.35), transparent),
+    /* 星云 */
+    radial-gradient(ellipse 78% 52% at 10% -8%,  var(--sy-nebula-1), transparent 62%),
+    radial-gradient(ellipse 68% 48% at 92% 2%,   var(--sy-nebula-2), transparent 58%),
+    radial-gradient(ellipse 58% 42% at 52% 108%, var(--sy-nebula-3), transparent 62%),
+    /* 次元网格 */
+    linear-gradient(rgba(148,120,255,.042) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,120,255,.042) 1px, transparent 1px),
+    linear-gradient(180deg, #06050d, #0a0818 55%, #06050d);
+  background-size:
+    auto, auto, auto, auto, auto, auto,
+    auto, auto, auto,
+    46px 46px, 46px 46px,
+    auto;
+  background-attachment: fixed, fixed, fixed, fixed, fixed, fixed, fixed, fixed, fixed, fixed, fixed, fixed;
+  background-position: 0 0;
+  color: var(--sy-text) !important;
+  min-height: 100vh;
+}
+
+/* 顶部一道极细的「次元裂缝」光带 */
+html body::before{
+  content:"";
+  position:fixed; top:0; left:0; right:0; height:2px; z-index:60;
+  background:linear-gradient(90deg, transparent, rgba(167,139,250,.85), rgba(34,211,238,.85), rgba(240,171,252,.85), transparent);
+  box-shadow:0 0 14px rgba(167,139,250,.55);
+  pointer-events:none;
+}
+/* 注：不对 body 整体做 opacity 动画——会影响广告 iframe 且可能被联盟判定为遮挡/修改广告。
+   星云保持静态，视觉已足够。 */
+
+/* ---------- 3. 全局排版 ---------- */
+html body, html.dark body{
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+html a{ color: var(--sy-violet); }
+html a:hover{ color: var(--sy-cyan); }
+html h1, html h2, html h3, html h4,
+html .font-bold, html .font-medium{
+  color: var(--sy-text);
+  text-shadow: 0 0 20px rgba(167,139,250,.16);
+}
+
+/* ---------- 4. 玻璃拟态：卡片 / 侧栏 / 面板 ---------- */
+html .card-shadow,
+html .rounded-xl,
+html aside > div,
+html section[class*="rounded-xl"],
+html .block,
+html .wrap > section{
+  background-color: var(--sy-surface) !important;
+  border: 1px solid var(--sy-line) !important;
+  box-shadow: var(--sy-ring), 0 10px 30px rgba(0,0,0,.34) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* ---------------- 首页（Tailwind 体系）---------------- */
+
+/* 顶栏：深空玻璃 */
+html header[class*="sticky"],
+html header[class*="backdrop-blur"]{
+  background: linear-gradient(90deg, rgba(9,7,20,.92), rgba(19,14,40,.90)) !important;
+  border-bottom: 1px solid var(--sy-line) !important;
+  box-shadow: 0 6px 26px rgba(0,0,0,.45), inset 0 -1px 0 rgba(167,139,250,.12);
+  backdrop-filter: blur(16px);
+}
+/* 导航主色：橙 → 橙+紫光晕 */
+html .text-\[\#ff9500\],
+html .text-\[\#ffb84d\]{
+  color: var(--sy-orange) !important;
+  text-shadow: 0 0 16px rgba(255,149,0,.30), 0 0 26px rgba(167,139,250,.20);
+}
+/* 搜索框 / 输入 / 下拉：深空凹槽 */
+html input[type="search"], html input[type="text"], html input[type="password"], html select{
+  background: rgba(7,6,16,.82) !important;
+  border: 1px solid var(--sy-line) !important;
+  color: var(--sy-text) !important;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,.4);
+}
+html input:focus, html select:focus{
+  border-color: var(--sy-line-hi) !important;
+  box-shadow: 0 0 0 3px rgba(167,139,250,.14), inset 0 1px 4px rgba(0,0,0,.35) !important;
+}
+html input::placeholder{ color: var(--sy-muted) !important; }
+
+/* 分类药丸 / 小按钮：玻璃底 + 悬停发光 */
+html [class*="bg-gray-100"],
+html [class*="bg-\[\#2a2a2a\]"],
+html [class*="bg-\[\#222\]"],
+html [class*="bg-\[\#1a1a1a\]"]{
+  background-color: rgba(28,23,52,.82) !important;
+  border-color: var(--sy-line) !important;
+  color: var(--sy-text-2) !important;
+}
+html [class*="bg-gray-100"]:hover,
+html [class*="bg-\[\#2a2a2a\]"]:hover,
+html [class*="bg-\[\#222\]"]:hover{
+  background-color: rgba(46,36,84,.92) !important;
+  border-color: var(--sy-line-hi) !important;
+}
+/* 橙底按钮保留品牌色，加霓虹光 */
+html .bg-\[\#ff9500\]{
+  background-color: var(--sy-orange) !important;
+  box-shadow: 0 0 0 1px rgba(255,149,0,.5), 0 4px 18px rgba(255,149,0,.24), 0 0 26px rgba(167,139,250,.20) !important;
+}
+html button:hover{ box-shadow: 0 0 0 1px var(--sy-line-hi), 0 0 18px rgba(167,139,250,.22); }
+
+/* 书单行：暗玻璃 + 细紫边，hover 时冷光扫过 */
+html #bookGrid > div,
+html #randomGrid > div,
+html #dailyRecGrid > div{
+  background: rgba(16,13,32,.74) !important;
+  border-color: var(--sy-line) !important;
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+}
+html #bookGrid > div:hover,
+html #randomGrid > div:hover,
+html #dailyRecGrid > div:hover{
+  transform: translateY(-2px);
+  border-color: var(--sy-line-hi) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4), 0 0 18px rgba(167,139,250,.18) !important;
+}
+html #bookGrid .text-gray-400, html #randomGrid .text-gray-400{ color: var(--sy-muted) !important; }
+html #bookGrid .text-gray-800, html #randomGrid .text-gray-800{ color: var(--sy-text) !important; }
+
+/* Tabs 选中态发光 */
+html .tab.border-\[\#ff9500\],
+html button.border-\[\#ff9500\]{
+  text-shadow: 0 0 14px rgba(255,149,0,.4);
+  filter: drop-shadow(0 0 5px rgba(255,149,0,.3));
+}
+
+/* 今日推荐：紫金渐变卡 */
+html #dailyRec{
+  background: linear-gradient(120deg, rgba(107,52,205,.16), rgba(255,149,0,.06), transparent) !important;
+  border-color: rgba(167,139,250,.34) !important;
+}
+
+/* 分页 */
+html #pagination i, html #pagination button{
+  background: rgba(20,16,40,.85) !important;
+  border-color: var(--sy-line) !important;
+  color: var(--sy-text-2) !important;
+}
+html #pagination .on, html #pagination button[class*="ff9500"]{
+  background: linear-gradient(135deg, #ff9500, #ffb84d) !important;
+  color:#120b04 !important;
+  box-shadow: 0 0 18px rgba(255,149,0,.35) !important;
+}
+
+/* ---------------- 阅读页（正文护眼优先）---------------- */
+
+/* 阅读器顶栏 */
+html header[class*="backdrop-blur"]{
+  background: linear-gradient(90deg, rgba(9,7,20,.94), rgba(18,13,38,.92)) !important;
+}
+/* TXT 正文：背景/字色由 read.html 的 bgModes 用 inline style 控制（用户可切换
+   羊皮纸/护眼绿），此处不强行覆盖，只给容器加一层微光边框，避免破坏切换功能。
+   默认阅读底色已在 read.html 的 bgModes[0] 改为异次元深空色。 */
+html #txtWrap{
+  background: #0b0918;   /* 兜底；JS 会写入 inline style 覆盖 */
+  box-shadow: inset 0 0 0 1px rgba(148,120,255,.10);
+}
+html #txtContent{
+  text-shadow: none !important;
+  caret-color: var(--sy-violet);
+}
+html #txtContent::-webkit-scrollbar, html #viewerWrap::-webkit-scrollbar{ width:8px; }
+html ::-webkit-scrollbar{ width:9px; height:9px; }
+html ::-webkit-scrollbar-track{ background:#090714; }
+html ::-webkit-scrollbar-thumb{
+  background: linear-gradient(180deg, #6d28d9, #0e7490);
+  border-radius:6px;
+  border:2px solid #090714;
+}
+/* epub 阅读器壳 */
+html #viewerWrap{ background: radial-gradient(ellipse at 50% 0%, rgba(107,52,205,.10), transparent 70%) !important; }
+html #viewer{ box-shadow: 0 0 0 1px var(--sy-line), 0 18px 60px rgba(0,0,0,.6) !important; }
+/* 章节导航条 */
+html #txtNav, html .rd-nav{
+  background: linear-gradient(90deg, rgba(9,7,20,.96), rgba(18,13,38,.96)) !important;
+  border-top: 1px solid var(--sy-line) !important;
+  backdrop-filter: blur(12px);
+}
+/* 左下广告栏：加一层冷光边框，与主题融合但不遮挡 */
+html .sy-ad-rail{
+  border: 1px solid rgba(167,139,250,.20);
+  border-radius: 12px;
+  padding: 4px;
+  background: rgba(9,7,20,.42);
+  backdrop-filter: blur(4px);
+}
+
+/* ---------------- 书页 / 分类页 / 合规页（内联 CSS 变量体系）---------------- */
+
+/* 覆盖书页内联 :root{--bg:#0d0d0d ...}，提高特异性到 html:root */
+html:root{
+  --bg:    #080612 !important;
+  --card:  rgba(18,15,34,.86) !important;
+  --fg:    #e9e6ff !important;
+  --muted: #9a95bd !important;
+  --orange:#ff9500 !important;
+  --line:  rgba(148,120,255,.22) !important;
+}
+html body .wrap,
+html body .block,
+html body .bcard{
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--sy-ring), 0 12px 34px rgba(0,0,0,.36) !important;
+  backdrop-filter: blur(14px);
+}
+html .wrap h1,
+html .wrap h2,
+html .sec-title{
+  color: var(--fg) !important;
+  text-shadow: 0 0 18px rgba(167,139,250,.18);
+}
+html .sec-title{ border-left-color: var(--orange) !important; }
+html .badge, html .cats a, html .ch-list li, html .books li{
+  background: rgba(26,22,48,.72) !important;
+  border-color: var(--line) !important;
+  color: var(--text-2, #cfcae8) !important;
+}
+html .badge:hover, html .cats a:hover{ border-color: var(--orange) !important; }
+html .btn,
+html a[class*="btn"]{
+  background: linear-gradient(135deg, #ff9500, #ffb84d) !important;
+  color:#150d03 !important;
+  box-shadow: 0 0 0 1px rgba(255,149,0,.45), 0 6px 22px rgba(255,149,0,.25) !important;
+}
+
+/* ---------------- 全站细节 ---------------- */
+
+/* 选中文字 */
+html ::selection{ background: rgba(167,139,250,.36); color:#fff; }
+
+/* 弹窗 / 模态 */
+html [class*="fixed"][class*="inset-0"][class*="bg-black"],
+html #authModal{
+  background: rgba(4,3,12,.78) !important;
+  backdrop-filter: blur(6px);
+}
+html [class*="modal"],
+html #authModal > div{
+  background: rgba(17,14,34,.97) !important;
+  border: 1px solid var(--sy-line-hi) !important;
+  box-shadow: 0 0 0 1px rgba(167,139,250,.12), 0 24px 80px rgba(0,0,0,.7), 0 0 60px rgba(107,52,205,.18) !important;
+}
+
+/* 加载动画换成星环 */
+html .spinner{
+  border-color: rgba(167,139,250,.18) !important;
+  border-top-color: var(--sy-violet) !important;
+  box-shadow: 0 0 14px rgba(167,139,250,.35);
+}
+
+/* 页脚 */
+html footer{ color: var(--sy-muted) !important; }
+
+/* ---------------- 浅色偏好：仍保留暗黑骨架，只是把星空提亮一档 ---------------- */
+html:not(.dark) body{
+  background-color: #0d0a1c !important;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% -5%, rgba(139,92,246,.20), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 0%, rgba(34,211,238,.14), transparent 55%),
+    linear-gradient(180deg, #0d0a1c, #14102a);
+  color: var(--sy-text) !important;
+}
+
+/* ---------------- 窄屏：减弱装饰，保证速度 ---------------- */
+@media (max-width: 640px){
+  html body{ background-size: auto, auto, auto, auto, auto, auto, auto, auto, auto, 60px 60px, 60px 60px, auto; }
+  html .card-shadow, html .rounded-xl{ backdrop-filter:none; }
+}

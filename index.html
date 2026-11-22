@@ -46,6 +46,8 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
+  <!-- 黑暗异次元主题：与 functions/_middleware.js 双保险，data-sy-theme 避免重复注入 -->
+  <link rel="stylesheet" href="/theme.css" data-sy-theme="1" />
   <script src="/analytics.js" defer></script>
   <script src="/ads.js" defer></script>
   <script src="/home-ads.js" defer></script>

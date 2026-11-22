@@ -28,6 +28,8 @@
     .spinner { border: 3px solid rgba(120,120,120,.25); border-top-color: #6b7280; border-radius: 50%; width: 28px; height: 28px; animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
+  <!-- 黑暗异次元主题：与 functions/_middleware.js 双保险，data-sy-theme 避免重复注入 -->
+  <link rel="stylesheet" href="/theme.css" data-sy-theme="1" />
   <script src="/analytics.js" defer></script>
   <script src="/ads.js" defer></script>
 </head>
@@ -368,10 +370,10 @@
       const wrap = $('txtContent');
       const nav = $('txtNav'), info = $('chapInfo');
       const bgModes = [
-        { name: '默认', bg: '#ffffff', fg: '#222222' },
+        { name: '深空', bg: '#0e0b1c', fg: '#ddd8f4' },
         { name: '羊皮纸', bg: '#f8f1e3', fg: '#5b4a3a' },
         { name: '护眼绿', bg: '#c7edcc', fg: '#234d2b' },
-        { name: '夜间', bg: '#1a1a1a', fg: '#cfcfcf' }
+        { name: '夜间', bg: '#0a0817', fg: '#cfc9ea' }
       ];
       let bgIndex = 0, fontSize = 17;
       const progressKey = 'ebook_progress_' + id;
@@ -574,10 +576,10 @@
     let fontSize = 100;
     // 阅读器配色：默认 / 羊皮纸 / 护眼绿 / 夜间
     const bgModes = [
-      { name: '默认', bg: '#ffffff', fg: '#222222' },
+      { name: '深空', bg: '#0e0b1c', fg: '#ddd8f4' },
       { name: '羊皮纸', bg: '#f8f1e3', fg: '#5b4a3a' },
       { name: '护眼绿', bg: '#c7edcc', fg: '#234d2b' },
-      { name: '夜间', bg: '#1a1a1a', fg: '#cfcfcf' }
+      { name: '夜间', bg: '#0a0817', fg: '#cfc9ea' }
     ];
     let bgIndex = 0;
 
