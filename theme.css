@@ -77,6 +77,27 @@ html body::before{
 /* 注：不对 body 整体做 opacity 动画——会影响广告 iframe 且可能被联盟判定为遮挡/修改广告。
    星云保持静态，视觉已足够。 */
 
+/* ---------- 2.5 角色背景底图（50% 透明，固定在视口，位于内容之下）----------
+ * 用 ::after 单独成层，避免给 body 整体设 opacity（那会连带半透明化文字/广告）。
+ * z-index:-1 → 落在 body 背景之上、普通文档流内容之下；pointer-events:none 不拦点击。
+ * 手机端降到 28% 透明并改为 cover，避免人物过大影响阅读。
+ */
+html body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background-image:url('/bg-character.jpg');
+  background-repeat:no-repeat;
+  background-position:center top;
+  background-size:cover;
+  opacity:.5;
+}
+@media (max-width: 768px){
+  html body::after{ opacity:.26; background-position:center top; }
+}
+
 /* ---------- 3. 全局排版 ---------- */
 html body, html.dark body{
   font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;

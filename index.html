@@ -133,21 +133,7 @@
         <div id="dailyRecGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
       </section>
 
-      <!-- 随机推荐区块 -->
-      <section id="randomSection" class="mb-8">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-base font-medium text-gray-800 dark:text-gray-100">随机推荐</h2>
-          <div class="flex items-center gap-2 flex-wrap">
-            <select id="randomCat" class="text-sm px-2 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 outline-none max-w-[120px]"></select>
-            <button id="excludeReadBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">排除已读</button>
-            <button id="ratingFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">评分优先</button>
-            <button id="favFirstBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">收藏优先</button>
-            <button id="unratedBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">只看未评分</button>
-            <button id="shuffleBtn" class="text-sm px-3 py-1 rounded-lg border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#222] transition">换一批</button>
-          </div>
-        </div>
-        <div id="randomGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
-      </section>
+      <!-- 随机推荐区块已移除（2026-11-22）：原 #randomSection，JS 侧以空节点兜底避免空引用 -->
 
       <!-- 加载提示 -->
       <div id="loading" class="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -235,6 +221,19 @@
   let allCategories = [];
 
   const $ = (id) => document.getElementById(id);
+
+  // 随机推荐区块已移除（2026-11-22）：补建隐藏的同名空节点，
+  // 让原有随机推荐 JS 逻辑继续安全运行（不报错、不显示），避免大规模删改。
+  (function () {
+    var ids = ['randomSection','randomCat','randomGrid','excludeReadBtn','ratingFirstBtn','favFirstBtn','unratedBtn','shuffleBtn'];
+    ids.forEach(function (id) {
+      if (document.getElementById(id)) return;
+      var el = document.createElement(id === 'randomCat' ? 'select' : 'div');
+      el.id = id;
+      el.style.display = 'none';
+      document.body.appendChild(el);
+    });
+  })();
 
   // ---------- 账号登录 + 进度云同步（Pages Functions + KV，无独立后端） ----------
   const AUTH_KEY = 'ebook_token', USER_KEY = 'ebook_user';
