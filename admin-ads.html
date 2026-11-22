@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>广告管理 · 深夜文库</title>
+<link rel="stylesheet" href="/theme.css" />
+<style>
+  :root{
+    --adm-bg:rgba(12,10,26,.86);
+    --adm-card:rgba(20,17,40,.78);
+    --adm-line:rgba(167,139,250,.22);
+    --adm-txt:#e8e4f7;
+    --adm-dim:#9b93bd;
+    --adm-accent:#a78bfa;
+    --adm-accent2:#22d3ee;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--adm-txt)}
+  a{color:var(--adm-accent2)}
+  .adm-wrap{max-width:1080px;margin:0 auto;padding:28px 18px 80px;position:relative;z-index:1}
+  .adm-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+  .adm-title{font-size:22px;font-weight:700;letter-spacing:.5px;background:linear-gradient(90deg,#ffb84d,#a78bfa 55%,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .adm-sub{font-size:12px;color:var(--adm-dim);margin-top:6px}
+  .adm-head a{font-size:12px;text-decoration:none;border:1px solid var(--adm-line);padding:6px 12px;border-radius:8px}
+  .panel{background:var(--adm-bg);border:1px solid var(--adm-line);border-radius:14px;padding:22px;backdrop-filter:blur(10px);box-shadow:0 8px 40px rgba(0,0,0,.35)}
+  .login-panel{max-width:420px;margin:60px auto}
+  .login-panel h2{margin:0 0 8px;font-size:18px}
+  .login-panel p{color:var(--adm-dim);font-size:13px;line-height:1.7;margin:0 0 18px}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field label{font-size:12px;color:var(--adm-dim)}
+  input[type=text],input[type=password],textarea,select{
+    width:100%;background:rgba(8,6,20,.72);color:var(--adm-txt);border:1px solid var(--adm-line);
+    border-radius:8px;padding:9px 11px;font-size:13px;outline:none;font-family:inherit;
+  }
+  input:focus,textarea:focus,select:focus{border-color:var(--adm-accent);box-shadow:0 0 0 2px rgba(167,139,250,.15)}
+  textarea{resize:vertical;min-height:76px;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
+  .btn{border:1px solid var(--adm-line);background:rgba(167,139,250,.12);color:var(--adm-txt);padding:9px 18px;border-radius:8px;cursor:pointer;font-size:13px;transition:.15s}
+  .btn:hover{background:rgba(167,139,250,.24);border-color:var(--adm-accent)}
+  .btn.primary{background:linear-gradient(90deg,rgba(167,139,250,.9),rgba(34,211,238,.75));color:#0b0818;font-weight:700;border-color:transparent}
+  .btn.primary:hover{filter:brightness(1.12)}
+  .btn.sm{padding:5px 11px;font-size:12px}
+  .btn.danger{color:#fca5a5;border-color:rgba(252,165,165,.3)}
+  .btn.danger:hover{background:rgba(252,165,165,.12)}
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .toolbar .spacer{flex:1}
+  .status{font-size:12px;color:var(--adm-dim)}
+  .status.ok{color:#6ee7b7}
+  .status.err{color:#fca5a5}
+  .slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+  .slot{background:var(--adm-card);border:1px solid var(--adm-line);border-radius:12px;padding:15px;position:relative}
+  .slot.off{opacity:.62}
+  .slot-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+  .slot-name{font-size:14px;font-weight:600}
+  .slot-key{font-size:10px;color:var(--adm-dim);font-family:ui-monospace,monospace;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px}
+  .slot-pos{font-size:11px;color:var(--adm-dim);margin-bottom:12px;line-height:1.5}
+  .sw{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--adm-dim)}
+  .sw input{width:15px;height:15px;accent-color:#a78bfa;cursor:pointer}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hint{font-size:10px;color:#7f77a3;margin-top:4px;line-height:1.4}
+  .prev{margin-top:10px;padding:8px;background:rgba(0,0,0,.25);border-radius:8px;min-height:34px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .prev img{max-width:100%;max-height:110px;display:block;border-radius:5px}
+  .prev .empty{font-size:11px;color:#6f668f}
+  .help{margin-top:22px;background:rgba(8,6,20,.5);border:1px solid var(--adm-line);border-radius:12px;padding:16px 18px;font-size:12px;color:var(--adm-dim);line-height:1.85}
+  .help b{color:var(--adm-txt)}
+  .help code{background:rgba(0,0,0,.35);padding:1px 5px;border-radius:4px;color:#c4b5fd;font-size:11px}
+  .help ul{margin:8px 0 0;padding-left:20px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:rgba(20,17,40,.96);border:1px solid var(--adm-line);padding:11px 22px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:640px){.slot-grid{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="adm-wrap">
+  <div class="adm-head">
+    <div>
+      <div class="adm-title">深夜文库 · 广告管理</div>
+      <div class="adm-sub">改完即生效，无需重新部署 · 数据存 Cloudflare KV</div>
+    </div>
+    <a href="/" target="_blank">查看首页 ↗</a>
+  </div>
+
+  <!-- 登录 -->
+  <section id="loginView" class="panel login-panel">
+    <h2>输入管理密码</h2>
+    <p>密码为 Cloudflare 环境变量 <code>AD_PASS</code>，未设置时默认 <code>shenye2026</code>。建议到 CF 后台修改。</p>
+    <div class="field">
+      <label>管理密码</label>
+      <input type="password" id="passInput" placeholder="请输入管理密码" autocomplete="current-password" />
+    </div>
+    <button class="btn primary" id="loginBtn">进入后台</button>
+    <div class="status" id="loginStatus" style="margin-top:12px"></div>
+  </section>
+
+  <!-- 管理主界面 -->
+  <main id="adminView" style="display:none">
+    <div class="panel" style="margin-bottom:16px">
+      <div class="toolbar">
+        <span class="status" id="saveStatus"></span>
+        <span class="spacer"></span>
+        <button class="btn sm" id="reloadBtn">重新载入</button>
+        <button class="btn sm danger" id="clearBtn">清空全部</button>
+        <button class="btn primary" id="saveBtn">保存全部</button>
+        <button class="btn sm" id="logoutBtn">退出</button>
+      </div>
+    </div>
+    <div class="slot-grid" id="slotGrid"></div>
+
+    <div class="help">
+      <b>使用说明</b>
+      <ul>
+        <li><b>图片模式</b>：在「内容」填图片直链（可放图床或自己的 R2），「点击链接」填跳转地址；留空则不可点击。</li>
+        <li><b>HTML 模式</b>：粘贴联盟给的代码。支持异步脚本型（如 JuicyAds 的 <code>&lt;ins&gt; + jads.js</code>、Adsterra 的 <code>container + 脚本</code>）和 iframe / img 代码。</li>
+        <li><b>不支持</b> <code>document.write</code> 型代码（如旧版 Adsterra atOptions 横幅），动态插入会清空整页；这类请用联盟后台的 iframe 版本。</li>
+        <li>只勾选「启用」的位会显示；未启用的位自动隐藏，不留空白。保存后刷新首页（Ctrl+F5）即可看到。</li>
+        <li>侧栏宽度约 208/224px，图片建议用自适应宽度，别放超过 300px 固定宽度的素材。</li>
+      </ul>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var PASS_KEY = 'sy_ad_admin_pass';
+  var API = '/api/adslots';
+
+  var SLOTS = [
+    { key:'home-banner', name:'顶部通栏',   pos:'主区 Tabs 上方 · 建议 320×50 或窄横幅', hint:'全宽居中，适合横幅' },
+    { key:'home-rect',   name:'顶部左格',   pos:'主区顶部左侧 · 建议 300×250 中矩形',   hint:'手机端自动单列' },
+    { key:'home-native', name:'顶部右格',   pos:'主区顶部右侧 · 建议自适应原生',       hint:'手机端自动单列' },
+    { key:'left-1',      name:'左侧广告 ①', pos:'左侧分类栏下方 · 栏宽约 208px',       hint:'建议正方形或竖幅' },
+    { key:'left-2',      name:'左侧广告 ②', pos:'左侧分类栏下方 · 栏宽约 208px',       hint:'建议正方形或竖幅' },
+    { key:'right-1',     name:'右侧广告 ①', pos:'右侧书架栏下方 · 栏宽约 224px',       hint:'建议窄横幅' },
+    { key:'right-2',     name:'右侧广告 ②', pos:'右侧书架栏下方 · 栏宽约 224px',       hint:'建议窄横幅' },
+    { key:'right-3',     name:'右侧广告 ③', pos:'右侧书架栏下方 · 栏宽约 224px',       hint:'建议卡片或竖幅' }
+  ];
+
+  var $ = function(id){ return document.getElementById(id); };
+  var pass = '';
+  try { pass = sessionStorage.getItem(PASS_KEY) || ''; } catch(e){}
+
+  function toast(msg){
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+  }
+  function setStatus(el, msg, cls){
+    el.textContent = msg;
+    el.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  // ---------- 登录 ----------
+  async function login(p, silent){
+    var res = await fetch(API, { headers: p ? { 'X-Ad-Pass': p } : {}, cache:'no-store' });
+    var d = await res.json();
+    if (!d.authed) {
+      if (!silent) setStatus($('loginStatus'), '密码错误，请重试', 'err');
+      return false;
+    }
+    pass = p;
+    try { sessionStorage.setItem(PASS_KEY, p); } catch(e){}
+    $('loginView').style.display = 'none';
+    $('adminView').style.display = '';
+    await load(true);
+    return true;
+  }
+
+  $('loginBtn').addEventListener('click', function(){
+    var p = $('passInput').value.trim();
+    if (!p) { setStatus($('loginStatus'), '请输入密码', 'err'); return; }
+    login(p, false).catch(function(e){ setStatus($('loginStatus'), '网络错误：' + e.message, 'err'); });
+  });
+  $('passInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') $('loginBtn').click();
+  });
+
+  // ---------- 渲染表单 ----------
+  function field(key, suffix, label, cls, placeholder){
+    return '<div class="field ' + (cls||'') + '"><label>' + label + '</label>' +
+           '<div data-f="' + suffix + '">' + placeholder + '</div></div>';
+  }
+
+  function buildForm(data){
+    var grid = $('slotGrid');
+    grid.innerHTML = SLOTS.map(function(s){
+      var d = (data.slots && data.slots[s.key]) || { enabled:false, type:'image', value:'', link:'', note:'' };
+      return '<div class="slot' + (d.enabled ? '' : ' off') + '" data-key="' + s.key + '">' +
+        '<div class="slot-hd">' +
+          '<div><span class="slot-name">' + s.name + '</span> <span class="slot-key">' + s.key + '</span></div>' +
+          '<label class="sw"><input type="checkbox" data-f="enabled" ' + (d.enabled ? 'checked' : '') + ' />启用</label>' +
+        '</div>' +
+        '<div class="slot-pos">' + s.pos + '</div>' +
+        '<div class="row2">' +
+          '<div class="field"><label>类型</label><select data-f="type">' +
+            '<option value="image" ' + (d.type === 'image' ? 'selected' : '') + '>图片 + 链接</option>' +
+            '<option value="html" ' + (d.type === 'html' ? 'selected' : '') + '>HTML 代码</option>' +
+          '</select></div>' +
+          '<div class="field"><label>备注（自己看）</label><input type="text" data-f="note" value="' + esc(d.note) + '" placeholder="例如：某联盟横幅" /></div>' +
+        '</div>' +
+        '<div class="field"><label>内容（图片直链 或 HTML 代码）</label>' +
+          '<textarea data-f="value" placeholder="' + (d.type === 'html' ? '粘贴联盟代码' : 'https://example.com/ad.png') + '">' + esc(d.value) + '</textarea>' +
+          '<div class="hint">' + s.hint + '</div>' +
+        '</div>' +
+        '<div class="field" data-row="link" style="' + (d.type === 'html' ? 'display:none' : '') + '"><label>点击链接（图片模式有效）</label>' +
+          '<input type="text" data-f="link" value="' + esc(d.link) + '" placeholder="https://… 留空则不可点击" /></div>' +
+        '<div class="prev" data-f="prev"></div>' +
+      '</div>';
+    }).join('');
+
+    // 事件绑定
+    Array.prototype.forEach.call(grid.querySelectorAll('.slot'), function(card){
+      var typeSel = card.querySelector('[data-f="type"]');
+      var valTa = card.querySelector('[data-f="value"]');
+      var linkRow = card.querySelector('[data-row="link"]');
+      var prev = card.querySelector('[data-f="prev"]');
+      var chk = card.querySelector('[data-f="enabled"]');
+
+      function refreshPreview(){
+        var t = typeSel.value;
+        var v = valTa.value.trim();
+        linkRow.style.display = (t === 'image') ? '' : 'none';
+        card.classList.toggle('off', !chk.checked);
+        if (!v) { prev.innerHTML = '<span class="empty">未填写内容</span>'; return; }
+        if (t === 'image') {
+          prev.innerHTML = '<img src="' + escAttr(v) + '" alt="预览" onerror="this.style.display=\'none\'" />';
+        } else {
+          prev.innerHTML = '<span class="empty">HTML 代码（' + v.length + ' 字符）· 保存后到首页预览</span>';
+        }
+      }
+      typeSel.addEventListener('change', refreshPreview);
+      valTa.addEventListener('input', refreshPreview);
+      chk.addEventListener('change', refreshPreview);
+      refreshPreview();
+    });
+  }
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function escAttr(s){ return esc(s).replace(/'/g,'&#39;'); }
+
+  function collect(){
+    var slots = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#slotGrid .slot'), function(card){
+      var key = card.getAttribute('data-key');
+      slots[key] = {
+        enabled: card.querySelector('[data-f="enabled"]').checked,
+        type: card.querySelector('[data-f="type"]').value,
+        value: card.querySelector('[data-f="value"]').value,
+        link: card.querySelector('[data-f="link"]').value,
+        note: card.querySelector('[data-f="note"]').value
+      };
+    });
+    return slots;
+  }
+
+  // ---------- 载入 / 保存 / 清空 ----------
+  async function load(silent){
+    try {
+      var d = await fetch(API, { cache:'no-store' }).then(function(r){ return r.json(); });
+      buildForm(d);
+      var t = d.updatedAt ? new Date(d.updatedAt).toLocaleString('zh-CN') : '从未保存';
+      setStatus($('saveStatus'), '上次保存：' + t, '');
+      if (!silent) toast('已重新载入');
+    } catch(e) {
+      setStatus($('saveStatus'), '载入失败：' + e.message, 'err');
+    }
+  }
+
+  $('reloadBtn').addEventListener('click', function(){ load(false); });
+
+  $('saveBtn').addEventListener('click', async function(){
+    var btn = this;
+    btn.disabled = true;
+    setStatus($('saveStatus'), '保存中…', '');
+    try {
+      var res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'X-Ad-Pass': pass },
+        body: JSON.stringify({ slots: collect() })
+      });
+      var d = await res.json();
+      if (!res.ok || !d.ok) {
+        setStatus($('saveStatus'), '保存失败：' + (d.error || res.status), 'err');
+        toast('保存失败：' + (d.error || res.status));
+      } else {
+        setStatus($('saveStatus'), '已保存 ' + new Date(d.updatedAt).toLocaleString('zh-CN'), 'ok');
+        toast('保存成功，刷新首页即可看到');
+      }
+    } catch(e) {
+      setStatus($('saveStatus'), '保存失败：' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('clearBtn').addEventListener('click', async function(){
+    if (!confirm('确定清空全部广告位？（立即生效，不可撤销）')) return;
+    var empty = {};
+    SLOTS.forEach(function(s){ empty[s.key] = { enabled:false, type:'image', value:'', link:'', note:'' }; });
+    try {
+      var res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'X-Ad-Pass': pass },
+        body: JSON.stringify({ slots: empty })
+      });
+      var d = await res.json();
+      if (!res.ok || !d.ok) { toast('清空失败：' + (d.error || res.status)); return; }
+      buildForm({ slots: empty });
+      setStatus($('saveStatus'), '已清空全部广告位', 'ok');
+      toast('已清空');
+    } catch(e) { toast('清空失败：' + e.message); }
+  });
+
+  $('logoutBtn').addEventListener('click', function(){
+    try { sessionStorage.removeItem(PASS_KEY); } catch(e){}
+    pass = '';
+    $('adminView').style.display = 'none';
+    $('loginView').style.display = '';
+    $('passInput').value = '';
+    setStatus($('loginStatus'), '已退出', '');
+  });
+
+  // 启动时若有缓存密码，静默登录
+  if (pass) login(pass, true).catch(function(){ /* 静默失败：显示登录框 */ });
+})();
+</script>
+</body>
+</html>

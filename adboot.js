@@ -37,6 +37,10 @@
   var isHome = /^\/(index\.html)?$/.test(path);
   var isReader = /^\/read(\.html)?$/.test(path);
 
+  // 首页广告（含浮层）已全部改为后台配置：/admin-ads.html + adslots.js
+  // 首页不再写入任何联盟脚本，避免与后台投放重复或遮挡。
+  if (isHome) return;
+
   function w(s) { document.write(s); }
   function ext(url, extra) {
     return '<script ' + (extra || '') + ' data-cfasync="false" src="' + url + '"><\/script>';

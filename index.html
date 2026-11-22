@@ -49,8 +49,7 @@
   <!-- 黑暗异次元主题：与 functions/_middleware.js 双保险，data-sy-theme 避免重复注入 -->
   <link rel="stylesheet" href="/theme.css" data-sy-theme="1" />
   <script src="/analytics.js" defer></script>
-  <script src="/ads.js" defer></script>
-  <script src="/home-ads.js" defer></script>
+  <script src="/adslots.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-[#0d0d0d] dark:text-gray-200 transition-colors min-h-screen">
 
@@ -82,10 +81,10 @@
         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 px-1">分类</h3>
         <div id="catList" class="space-y-1"></div>
       </div>
-      <!-- 左侧分类栏下方：2 个方形广告图（静态素材，w-full 自适应窄栏） -->
+      <!-- 左侧分类栏下方：广告位（后台 /admin-ads.html 配置，未启用时自动隐藏） -->
       <div class="grid grid-cols-1 gap-2 mt-3">
-        <a href="#" onclick="return false" class="block"><img src="/ad-left-gossip.png" alt="广告" class="w-full rounded-lg block" loading="lazy" /></a>
-        <a href="#" onclick="return false" class="block"><img src="/ad-right-game.png" alt="广告" class="w-full rounded-lg block" loading="lazy" /></a>
+        <div data-ad-key="left-1" class="hidden text-center overflow-hidden"></div>
+        <div data-ad-key="left-2" class="hidden text-center overflow-hidden"></div>
       </div>
     </aside>
 
@@ -95,32 +94,12 @@
       <!-- 移动端：分类横向滚动 -->
       <div id="catBar" class="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-1"></div>
 
-      <!-- 首页广告位（2026-11-22）：320×50 通栏 + 300×250 中矩形 + Native 原生。
-           官方代码直接静态写在各自格子里：document.write 在解析期落到脚本所在位置，
-           async 脚本按容器 id 填充。均不依赖事后搬运，避免联盟脚本改写 DOM 导致落位失效。
-           Social Bar 是页面浮层、不占格子，仍在 adboot.js 加载。 -->
+      <!-- 首页广告位：全部由后台 /admin-ads.html 配置（KV），未启用时自动隐藏、不留空白 -->
       <div class="mb-5 space-y-2.5">
-        <!-- ① 320×50 横幅通栏（Adsterra atOptions：invoke 脚本用 document.write 写 iframe 到本格） -->
-        <div class="text-center overflow-hidden">
-          <script>atOptions={'key':'0314b76eee5da2a4c14f696662cbe285','format':'iframe','height':50,'width':320,'params':{}};</script>
-          <script data-cfasync="false" src="https://bauval.org/22/0314b76eee5da2a4c14f696662cbe285"></script>
-        </div>
+        <div data-ad-key="home-banner" class="hidden text-center overflow-hidden"></div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <!-- ② 300×250 中矩形（JuicyAds：ins 容器 + async jads.js 按 id 填充 + push） -->
-          <div class="flex justify-center min-h-[60px] overflow-hidden">
-            <div>
-              <ins id="1133796" data-width="300" data-height="250"></ins>
-              <script async data-cfasync="false" src="https://poweredby.jads.co/js/jads.js"></script>
-              <script>(adsbyjuicy=window.adsbyjuicy||[]).push({adzone:1133796});</script>
-            </div>
-          </div>
-          <!-- ③ Native 原生（Adsterra：async 脚本按 container id 填充） -->
-          <div class="flex justify-center min-h-[60px] overflow-hidden">
-            <div>
-              <div id="container-c13d2e7fdaaf75d273ad382b3a8dba11"></div>
-              <script async data-cfasync="false" src="https://bauval.org/21/c13d2e7fdaaf75d273ad382b3a8dba11"></script>
-            </div>
-          </div>
+          <div data-ad-key="home-rect" class="hidden flex justify-center min-h-[60px] overflow-hidden"></div>
+          <div data-ad-key="home-native" class="hidden flex justify-center min-h-[60px] overflow-hidden"></div>
         </div>
       </div>
 
@@ -140,9 +119,6 @@
         </button>
         <div id="shelfBody" class="hidden mt-3 space-y-3"></div>
       </section>
-
-      <!-- 广告位：列表区上方（未启用时自动隐藏，不留空白） -->
-      <div data-ad-slot="home-top" class="mb-4 text-center"></div>
 
       <!-- 今日推荐（数据来自 promo/out.json，由 GitHub Actions 每日更新；失败时前端同源降级） -->
       <section id="dailyRec" class="hidden mb-8 rounded-xl bg-gradient-to-r from-[#ff9500]/5 to-transparent dark:from-[#ff9500]/10 border border-[#ff9500]/25 p-4">
@@ -166,9 +142,6 @@
       <!-- 书籍列表（紧凑文字行，无封面，两列） -->
       <div id="bookGrid" class="hidden grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
 
-      <!-- 广告位：列表区下方（未启用时自动隐藏，不留空白） -->
-      <div data-ad-slot="home-mid" class="mt-4 text-center"></div>
-
       <!-- 空状态 -->
       <div id="empty" class="hidden flex-col items-center justify-center py-20 text-gray-400">
         <div class="text-4xl mb-3">🔍</div><p class="text-sm">没有找到匹配的书籍</p>
@@ -182,11 +155,11 @@
     <aside id="deskShelf" class="hidden lg:block w-56 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto card-shadow rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-4">
       <h3 class="text-sm font-medium mb-3 text-gray-800 dark:text-gray-100">我的书架</h3>
       <div id="deskShelfBody" class="space-y-4 text-sm"></div>
-      <!-- 右侧书架栏下方：3 个广告图（静态素材，w-full 自适应窄栏） -->
+      <!-- 右侧书架栏下方：广告位（后台 /admin-ads.html 配置，未启用时自动隐藏） -->
       <div class="grid grid-cols-1 gap-2 mt-4">
-        <a href="#" onclick="return false" class="block"><img src="/ad-banner-1.png" alt="广告" class="w-full rounded block" loading="lazy" /></a>
-        <a href="#" onclick="return false" class="block"><img src="/ad-banner-2.png" alt="广告" class="w-full rounded block" loading="lazy" /></a>
-        <a href="#" onclick="return false" class="block"><img src="/ad-vpn.png" alt="广告" class="w-full rounded block" loading="lazy" /></a>
+        <div data-ad-key="right-1" class="hidden text-center overflow-hidden"></div>
+        <div data-ad-key="right-2" class="hidden text-center overflow-hidden"></div>
+        <div data-ad-key="right-3" class="hidden text-center overflow-hidden"></div>
       </div>
     </aside>
   </main>
@@ -850,8 +823,6 @@
 })();
 </script>
 <script src="/agegate.js" defer></script>
-<!-- 广告：Adsterra（解析期写入，必须同步加载，勿加 defer/async） -->
-<script src="/adboot.js"></script>
-<script src="/adfoot.js"></script>
+<!-- 首页广告改由后台配置：/api/adslots → adslots.js（head 内 defer 加载），不再加载联盟写入脚本 -->
 </body>
 </html>
