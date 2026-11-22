@@ -92,12 +92,31 @@
       <div id="catBar" class="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-1"></div>
 
       <!-- 首页广告位（2026-11-22）：320×50 通栏 + 300×250 中矩形 + Native 原生。
-           Social Bar 为页面浮层，不占格子。落位由 adfoot.js 的 placeAds() 填充。 -->
+           官方代码直接静态写在各自格子里：document.write 在解析期落到脚本所在位置，
+           async 脚本按容器 id 填充。均不依赖事后搬运，避免联盟脚本改写 DOM 导致落位失效。
+           Social Bar 是页面浮层、不占格子，仍在 adboot.js 加载。 -->
       <div class="mb-5 space-y-2.5">
-        <div data-ad-port="banner" class="text-center"></div>
+        <!-- ① 320×50 横幅通栏（Adsterra atOptions：invoke 脚本用 document.write 写 iframe 到本格） -->
+        <div class="text-center overflow-hidden">
+          <script>atOptions={'key':'0314b76eee5da2a4c14f696662cbe285','format':'iframe','height':50,'width':320,'params':{}};</script>
+          <script data-cfasync="false" src="https://bauval.org/22/0314b76eee5da2a4c14f696662cbe285"></script>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div data-ad-port="rect" class="flex justify-center min-h-[60px]"></div>
-          <div data-ad-port="native" class="flex justify-center min-h-[60px]"></div>
+          <!-- ② 300×250 中矩形（JuicyAds：ins 容器 + async jads.js 按 id 填充 + push） -->
+          <div class="flex justify-center min-h-[60px] overflow-hidden">
+            <div>
+              <ins id="1133796" data-width="300" data-height="250"></ins>
+              <script async data-cfasync="false" src="https://poweredby.jads.co/js/jads.js"></script>
+              <script>(adsbyjuicy=window.adsbyjuicy||[]).push({adzone:1133796});</script>
+            </div>
+          </div>
+          <!-- ③ Native 原生（Adsterra：async 脚本按 container id 填充） -->
+          <div class="flex justify-center min-h-[60px] overflow-hidden">
+            <div>
+              <div id="container-c13d2e7fdaaf75d273ad382b3a8dba11"></div>
+              <script async data-cfasync="false" src="https://bauval.org/21/c13d2e7fdaaf75d273ad382b3a8dba11"></script>
+            </div>
+          </div>
         </div>
       </div>
 
