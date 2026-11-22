@@ -343,6 +343,16 @@ html .ad-grid:empty{ display:none; }
 html .ad-grid-hero{ grid-template-columns:repeat(2,minmax(0,1fr)); }
 html .ad-grid-cat,
 html .ad-grid-shelf{ grid-template-columns:1fr; }
+/* shelf 区已从「我的书架」卡片中移出，作为右侧独立区块：单独玻璃卡 + 与书架留出间距 */
+html .ad-grid-shelf:not(:empty){
+  background: var(--sy-surface) !important;
+  border: 1px solid var(--sy-line) !important;
+  box-shadow: var(--sy-ring), 0 10px 30px rgba(0,0,0,.34) !important;
+  border-radius: .75rem;
+  padding: .75rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
 @media (max-width: 640px){
   html .ad-grid-hero{ grid-template-columns:1fr; }
 }
