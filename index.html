@@ -82,11 +82,7 @@
         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3 px-1">分类</h3>
         <div id="catList" class="space-y-1"></div>
       </div>
-      <!-- 广告网格：左侧分类栏下方（2 格竖排） -->
-      <div class="grid grid-cols-1 gap-2.5 mt-3">
-        <div data-home-ad="cat-ad-1"></div>
-        <div data-home-ad="cat-ad-2"></div>
-      </div>
+      <!-- 侧栏过窄（208/224px）放不下 300px 素材，广告格已移至主区顶部统一管理 -->
     </aside>
 
     <!-- 中间：主内容 -->
@@ -95,10 +91,14 @@
       <!-- 移动端：分类横向滚动 -->
       <div id="catBar" class="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-1"></div>
 
-      <!-- 广告网格：主区 Tabs 上方（2 格横排，集中配置见 home-ads.js） -->
-      <div class="grid grid-cols-2 gap-2.5 mb-5">
-        <div data-home-ad="home-hero-1"></div>
-        <div data-home-ad="home-hero-2"></div>
+      <!-- 首页广告位（2026-11-22）：320×50 通栏 + 300×250 中矩形 + Native 原生。
+           Social Bar 为页面浮层，不占格子。落位由 adfoot.js 的 placeAds() 填充。 -->
+      <div class="mb-5 space-y-2.5">
+        <div data-ad-port="banner" class="text-center"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div data-ad-port="rect" class="flex justify-center min-h-[60px]"></div>
+          <div data-ad-port="native" class="flex justify-center min-h-[60px]"></div>
+        </div>
       </div>
 
       <!-- Tabs：最新 / 精华 / 热门 -->
@@ -159,11 +159,6 @@
     <aside id="deskShelf" class="hidden lg:block w-56 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto card-shadow rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-[#262626] p-4">
       <h3 class="text-sm font-medium mb-3 text-gray-800 dark:text-gray-100">我的书架</h3>
       <div id="deskShelfBody" class="space-y-4 text-sm"></div>
-      <!-- 广告网格：右侧书架栏下方（2 格竖排） -->
-      <div class="grid grid-cols-1 gap-2.5 mt-4">
-        <div data-home-ad="shelf-ad-1"></div>
-        <div data-home-ad="shelf-ad-2"></div>
-      </div>
     </aside>
   </main>
 
