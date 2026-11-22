@@ -2,23 +2,20 @@
  * ============================================================
  * 用 document.write 在 HTML 解析期写入广告，必须同步加载（勿 defer/async 本文件）。
  *
- * 【首页】（/ 或 /index.html）
- *   320×50 / 300×250 / Native 三个格子广告已改为「官方代码静态写进 index.html 格子」，
- *   解析期天然落到格内，不再靠事后搬运。因此本文件在首页跳过这三者，只保留：
- *     - Popunder（首次弹一次门控）
- *     - Social Bar（浮层，不占格子）
+ * 【全站广告已迁移到后台 /admin-ads 统一管理】
+ *   首页由 adslots.js 渲染三区，看书页由 ads.js 渲染 reader-top/bottom 两区。
+ *   本文件与 adfoot.js 写死的联盟广告已全部停用（ENABLED=false），
+ *   避免与后台投放重复、遮挡阅读。下方联盟代码保留，日后若要恢复把 ENABLED 改 true 即可。
  *
- * 【书页 / 章节页】本文件照常写 300×250 + Native + Social Bar；adfoot.js 写 320×50。
- * 【阅读页】只写 Popunder；320×50 由 adfoot.js 搬到正文下方（见 adfoot.js）。
- *
- * 【总开关】ENABLED=false → 关闭本文件涉及的浮层广告
- * 【格式开关】FORMAT 各项改 false 即关闭对应广告
+ * 【总开关】ENABLED=false → 全站停用本文件所有写死联盟广告（当前状态）
+ * 【格式开关】FORMAT 各项单独控制；总开关关闭时无效
  * ============================================================
  */
 (function () {
   'use strict';
 
-  var ENABLED = true;
+  // 全站写死联盟广告总开关：false = 全部停用，广告只由后台 /admin-ads 投放
+  var ENABLED = false;
   var FORMAT = {
     popunder: true,  // 首次访问弹一次；想彻底关闭改 false
     native:   true,  // 原生（书页/章节页；首页已静态写、阅读页不投）
