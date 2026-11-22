@@ -334,6 +334,9 @@ ${ogTags}
     <a href="../privacy">隐私政策</a> · <a href="../dmca">版权投诉</a> · <a href="../report">内容举报/审核</a></div>
 </div>
 <script src="/agegate.js" defer></script>
+<!-- 广告：Adsterra（解析期写入，必须同步加载，勿加 defer/async） -->
+<script src="/adboot.js"></script>
+<script src="/adfoot.js"></script>
 </body>
 </html>`;
 }
@@ -449,6 +452,9 @@ ${catOgTags}
   <div data-ad-slot="footer" style="margin:18px 0;text-align:center"></div>
   <div class="foot"><a href="../">返回深夜文库首页</a> · 全站共 ${books.length} 本在线小说</div>
 </div>
+<!-- 广告：Adsterra（解析期写入，必须同步加载，勿加 defer/async） -->
+<script src="/adboot.js"></script>
+<script src="/adfoot.js"></script>
 </body>
 </html>`;
 }

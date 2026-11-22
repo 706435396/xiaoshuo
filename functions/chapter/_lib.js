@@ -154,6 +154,9 @@ ${body}
   <span>本站仅面向成年读者，请勿传播侵权内容。品牌口号：每一个夜晚，都有一个值得读完的故事。</span>
 </footer>
 <script src="/agegate.js" defer></script>
+<!-- 广告：Adsterra（解析期写入，必须同步加载，勿加 defer/async） -->
+<script src="/adboot.js"></script>
+<script src="/adfoot.js"></script>
 </body>
 </html>`;
 }
