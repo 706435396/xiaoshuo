@@ -2,9 +2,12 @@
 // GET  /api/adslots          公开读取（前台渲染 / 后台加载；带正确 X-Ad-Pass 时附 authed=true）
 // POST /api/adslots          需 X-Ad-Pass 管理密码，写入 KV
 //
-// 数据结构：三区，每区是广告位数组，可自由增删
-//   { v:2, zones:{ hero:[slot], cat:[slot], shelf:[slot] }, updatedAt }
+// 数据结构：五区，每区是广告位数组，可自由增删
+//   首页三区：hero / cat / shelf
+//   看书两区：reader-top（正文上方）/ reader-bottom（正文下方）
+//   { v:2, zones:{ hero:[slot], cat:[slot], shelf:[slot], 'reader-top':[slot], 'reader-bottom':[slot] }, updatedAt }
 //   slot = { id, enabled, type:'image'|'html', value, link, note, size }
+// 注：看书两区由 ads.js 读取，同时映射旧静态命名 reader-top/bottom 与 content-top/bottom。
 //
 // 管理密码：CF 环境变量 AD_PASS；未设置时使用内置默认值
 // 数据存 KV USER_DATA，key = 'adslots:v1'（沿用 key，内部版本升 v2，自动迁移旧数据）
@@ -12,7 +15,7 @@ import { json } from './_shared.js';
 
 var KEY = 'adslots:v1';
 var DEFAULT_PASS = 'shenye2026';
-var ZONES = ['hero', 'cat', 'shelf'];
+var ZONES = ['hero', 'cat', 'shelf', 'reader-top', 'reader-bottom'];
 var MAX_PER_ZONE = 24;   // 每区最多 24 个广告位，防滥用
 var MAX_SLOT_LEN = 20000;
 
@@ -40,14 +43,16 @@ function emptySlot() {
   return { id: makeId(), enabled: false, type: 'image', value: '', link: '', note: '', size: 'auto' };
 }
 
-// C 版初始结构：三区各 2 个空位（用户可增删）
+// 初始结构：五区各 2 个空位（用户可增删）
 function emptyData() {
   return {
     v: 2,
     zones: {
       hero: [normalizeSlot({ id: 'hero-1' }), normalizeSlot({ id: 'hero-2' })],
       cat: [normalizeSlot({ id: 'cat-1' }), normalizeSlot({ id: 'cat-2' })],
-      shelf: [normalizeSlot({ id: 'shelf-1' }), normalizeSlot({ id: 'shelf-2' })]
+      shelf: [normalizeSlot({ id: 'shelf-1' }), normalizeSlot({ id: 'shelf-2' })],
+      'reader-top': [normalizeSlot({ id: 'rt-1' }), normalizeSlot({ id: 'rt-2' })],
+      'reader-bottom': [normalizeSlot({ id: 'rb-1' }), normalizeSlot({ id: 'rb-2' })]
     },
     updatedAt: 0
   };
@@ -57,8 +62,9 @@ function emptyData() {
 function migrate(data) {
   if (!data || typeof data !== 'object') return emptyData();
   if (data.v === 2 && data.zones && typeof data.zones === 'object') {
+    var seed = emptyData().zones; // 补齐新增区时给默认空位，保持各区初始结构一致
     ZONES.forEach(function (z) {
-      if (!Array.isArray(data.zones[z])) data.zones[z] = [];
+      if (!Array.isArray(data.zones[z])) data.zones[z] = (seed[z] || []).map(normalizeSlot);
       data.zones[z] = data.zones[z].slice(0, MAX_PER_ZONE).map(normalizeSlot);
     });
     return data;
