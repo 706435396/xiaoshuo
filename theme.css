@@ -253,15 +253,6 @@ html #txtNav, html .rd-nav{
   border-top: 1px solid var(--sy-line) !important;
   backdrop-filter: blur(12px);
 }
-/* 左下广告栏：加一层冷光边框，与主题融合但不遮挡 */
-html .sy-ad-rail{
-  border: 1px solid rgba(167,139,250,.20);
-  border-radius: 12px;
-  padding: 4px;
-  background: rgba(9,7,20,.42);
-  backdrop-filter: blur(4px);
-}
-
 /* ---------------- 书页 / 分类页 / 合规页（内联 CSS 变量体系）---------------- */
 
 /* 覆盖书页内联 :root{--bg:#0d0d0d ...}，提高特异性到 html:root */
