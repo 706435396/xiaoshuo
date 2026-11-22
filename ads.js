@@ -30,6 +30,14 @@
     '728x90': [728, 90], '300x600': [300, 600], '468x60': [468, 60]
   };
 
+  // 从 atOptions 代码里解析 'width':468, 'height':60 这类尺寸
+  function atOptionsSize(code) {
+    var w = code.match(/['"]width['"]\s*:\s*(\d+)/i);
+    var h = code.match(/['"]height['"]\s*:\s*(\d+)/i);
+    if (w && h) return [parseInt(w[1], 10), parseInt(h[1], 10)];
+    return null;
+  }
+
   function makeCell(slot) {
     var cell = document.createElement('div');
     cell.className = 'ad-cell';
@@ -38,15 +46,27 @@
     cell.style.cssText = 'max-width:100%;margin:0 auto;overflow:hidden';
 
     if (slot.type === 'html') {
-      cell.innerHTML = slot.value;
-      // innerHTML 里的 script 不执行，重建以触发（联盟异步脚本）
-      var old = [].slice.call(cell.querySelectorAll('script'));
-      old.forEach(function (o) {
-        var s = document.createElement('script');
-        for (var i = 0; i < o.attributes.length; i++) s.setAttribute(o.attributes[i].name, o.attributes[i].value);
-        s.textContent = o.textContent;
-        o.parentNode.replaceChild(s, o);
-      });
+      // atOptions 全局单例冲突：用 iframe srcdoc 隔离每份代码到独立 window
+      if (/atOptions\s*=/.test(slot.value)) {
+        var dim = atOptionsSize(slot.value) || SIZE_MAP[slot.size];
+        var frame = document.createElement('iframe');
+        frame.setAttribute('scrolling', 'no');
+        frame.setAttribute('data-atoptions', '1');
+        frame.style.cssText = 'border:0;display:block;margin:0 auto;background:transparent' +
+          (dim ? ';width:' + dim[0] + 'px;height:' + dim[1] + 'px' : '');
+        frame.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0;background:transparent">' +
+          slot.value.replace(/<\/script>/gi, '<\\/script>') + '</body>';
+        cell.appendChild(frame);
+      } else {
+        cell.innerHTML = slot.value;
+        var old = [].slice.call(cell.querySelectorAll('script'));
+        old.forEach(function (o) {
+          var s = document.createElement('script');
+          for (var i = 0; i < o.attributes.length; i++) s.setAttribute(o.attributes[i].name, o.attributes[i].value);
+          s.textContent = o.textContent;
+          o.parentNode.replaceChild(s, o);
+        });
+      }
     } else {
       var img = document.createElement('img');
       img.src = slot.value;
