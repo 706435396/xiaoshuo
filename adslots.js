@@ -42,19 +42,24 @@
         frame.setAttribute('scrolling', 'no');
         frame.setAttribute('data-atoptions', '1');
         var W = dim ? dim[0] : 468, H = dim ? dim[1] : 60;
-        frame.style.cssText = 'border:0;display:block;background:transparent;transform-origin:top center' +
+        // 绝对定位：固定宽 iframe 不参与 flex 布局，避免把侧栏撑宽
+        frame.style.cssText = 'border:0;display:block;background:transparent;position:absolute;left:0;top:0;transform-origin:top left' +
           ';width:' + W + 'px;height:' + H + 'px';
+        cell.style.position = 'relative';
+        cell.style.overflow = 'hidden';
         // 内联 srcdoc：脚本在独立文档解析期执行，document.write/invoke 都正常
         frame.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0;background:transparent">' +
           slot.value.replace(/<\/script>/gi, '<\\/script>') + '</body>';
         cell.appendChild(frame);
         // 宽于容器时等比缩放，广告完整可见（不裁切）；支持窗口 resize
         function fitAt() {
-          var avail = cell.clientWidth || W;
+          // 以所在网格列宽为准（不含 cell 自身被 iframe 撑开的部分）
+          var zone = cell.parentNode;
+          var avail = (zone ? zone.clientWidth : cell.clientWidth) || W;
+          if (cell.classList.contains('span-2') && zone) avail = zone.clientWidth;
           var scale = avail < W ? avail / W : 1;
           frame.style.transform = 'scale(' + scale + ')';
           cell.style.height = Math.round(H * scale) + 'px';
-          cell.style.minWidth = Math.round(W * scale) + 'px';
         }
         requestAnimationFrame(function () { requestAnimationFrame(fitAt); });
         window.addEventListener('resize', fitAt);
