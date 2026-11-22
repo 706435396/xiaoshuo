@@ -14,7 +14,7 @@
  * ============================================================ */
 const THEME_TAG = '<link rel="stylesheet" href="/theme.css" data-sy-theme="1">';
 const AD_VER = '3'; // 升级此值即可全站强制刷新 adboot/adfoot 脚本缓存
-const ADSLOTS_VER = '4'; // adslots.js 渲染器版本（atOptions iframe 隔离修复）；升级即全站破缓存
+const ADSLOTS_VER = '5'; // adslots.js 渲染器版本（atOptions 绝对定位防撑开侧栏）；升级即全站破缓存
 
 export async function onRequest(context) {
   const { next } = context;
