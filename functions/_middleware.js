@@ -4,7 +4,7 @@
  * 作用：
  *   1. 对所有 HTML 响应注入 <link rel="stylesheet" href="/theme.css">，
  *      让 1505 个静态书页 / 分类页 / 合规页无需逐个改动即可统一换肤。
- *   2. 把页面里 /adboot.js、/adfoot.js 的引用加上版本号 ?v=3，强制破 CF 边缘缓存
+ *   2. 把页面里 /adboot.js、/adfoot.js 的引用加上版本号 ?v=4，强制破 CF 边缘缓存
  *      （源脚本已更新为"停用写死联盟广告"，但旧 URL 被 CDN 缓存 HIT 拿到旧版）。
  *
  * 设计要点：
@@ -13,7 +13,7 @@
  *   3. 主题注入与脚本破缓存各自独立，互不因对方的 early-return 跳过。
  * ============================================================ */
 const THEME_TAG = '<link rel="stylesheet" href="/theme.css" data-sy-theme="1">';
-const AD_VER = '3'; // 升级此值即可全站强制刷新 adboot/adfoot 脚本缓存
+const AD_VER = '4'; // 升级此值即可全站强制刷新 adboot/adfoot 脚本缓存（v4: 关闭 Popunder 弹窗）
 const ADSLOTS_VER = '5'; // adslots.js 渲染器版本（atOptions 绝对定位防撑开侧栏）；升级即全站破缓存
 
 export async function onRequest(context) {
