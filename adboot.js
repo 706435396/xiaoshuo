@@ -9,7 +9,7 @@
  *
  * 【总开关】ENABLED=false → 全站停用本文件所有写死联盟广告（当前状态）
  * 【格式开关】FORMAT 各项单独控制；总开关关闭时无效
- * 【Popunder】popunder=false → 弹窗广告已彻底关闭（即使日后恢复总开关也不会弹）
+ * 【Popunder】弹窗广告代码已完全删除（用户要求），不再保留任何弹窗逻辑
  * ============================================================
  */
 (function () {
@@ -18,15 +18,11 @@
   // 全站写死联盟广告总开关：false = 全部停用，广告只由后台 /admin-ads 投放
   var ENABLED = false;
   var FORMAT = {
-    popunder: false, // 已彻底关闭 Popunder 弹窗（用户要求）；如需恢复改 true 并同步升级中间件 AD_VER
     native:   true,  // 原生（书页/章节页；首页已静态写、阅读页不投）
     social:   true,  // 社交栏浮层（首页/书页/章节页；阅读页不加载避免遮挡正文）
     banner:   true,  // 320×50（在 adfoot.js 写入；首页已静态写）
     juicy:    true   // 300×250（书页/章节页；首页已静态写、阅读页不投）
   };
-
-  // Popunder 一次性门控：同一浏览器只在首次访问加载弹窗脚本
-  var POP_KEY = 'sy_pop_done_v1';
 
   window.SY_AD_CONFIG = { enabled: ENABLED, format: FORMAT };
   if (!ENABLED) return;
@@ -44,17 +40,7 @@
     return '<script ' + (extra || '') + ' data-cfasync="false" src="' + url + '"><\/script>';
   }
 
-  // 1) Popunder：仅首次访问加载；弹窗由联盟脚本在首次交互时触发
-  if (FORMAT.popunder) {
-    var firstVisit = true;
-    try { firstVisit = !localStorage.getItem(POP_KEY); } catch (e) {}
-    if (firstVisit) {
-      try { localStorage.setItem(POP_KEY, '1'); } catch (e) {}
-      w(ext('https://abscloud.org/1/0af312921b8958cf650f130cb9ee40f7'));
-    }
-  }
-
-  // 2) 300×250 中矩形（JuicyAds）：仅书页/章节页（首页已静态写进格子、阅读页不投）
+  // 1) 300×250 中矩形（JuicyAds）：仅书页/章节页（首页已静态写进格子、阅读页不投）
   if (FORMAT.juicy && !isHome && !isReader) {
     w(ext('https://poweredby.jads.co/js/jads.js', 'async="async"'));
     w('<div id="syAdRect"><ins id="1133796" data-width="300" data-height="250"></ins></div>');
