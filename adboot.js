@@ -9,6 +9,7 @@
  *
  * 【总开关】ENABLED=false → 全站停用本文件所有写死联盟广告（当前状态）
  * 【格式开关】FORMAT 各项单独控制；总开关关闭时无效
+ * 【Popunder】popunder=false → 弹窗广告已彻底关闭（即使日后恢复总开关也不会弹）
  * ============================================================
  */
 (function () {
@@ -17,7 +18,7 @@
   // 全站写死联盟广告总开关：false = 全部停用，广告只由后台 /admin-ads 投放
   var ENABLED = false;
   var FORMAT = {
-    popunder: true,  // 首次访问弹一次；想彻底关闭改 false
+    popunder: false, // 已彻底关闭 Popunder 弹窗（用户要求）；如需恢复改 true 并同步升级中间件 AD_VER
     native:   true,  // 原生（书页/章节页；首页已静态写、阅读页不投）
     social:   true,  // 社交栏浮层（首页/书页/章节页；阅读页不加载避免遮挡正文）
     banner:   true,  // 320×50（在 adfoot.js 写入；首页已静态写）
