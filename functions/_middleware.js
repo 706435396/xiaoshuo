@@ -20,6 +20,18 @@ const POPUNDER_VER = '1'; // 弹窗脚本版本；升级即全站破缓存
 const POPUNDER_TAG = '<script src="/popunder.js?v=' + POPUNDER_VER + '" data-sy-pop="1"><\/script>';
 
 export async function onRequest(context) {
+
+// --- pages.dev 重复内容防护：非内部回源请求 301 到正式域名 ---
+// Worker 未命中 R2 时会带 X-Chapter-Fallback:1 回源 pages.dev，必须放行，
+// 否则重定向回自定义域会再次命中 Worker 形成循环。
+const _reqUrl = new URL(context.request.url);
+const _host = _reqUrl.hostname.toLowerCase();
+const _isPagesDev = _host === 'xiaoshuo-5hn.pages.dev' || _host.endsWith('.pages.dev');
+const _isFallback = context.request.headers.get('X-Chapter-Fallback') === '1';
+if (_isPagesDev && !_isFallback) {
+  return Response.redirect('https://shenye.72tool.com' + _reqUrl.pathname + _reqUrl.search, 301);
+}
+
   const { next } = context;
   const original = await next();
 
