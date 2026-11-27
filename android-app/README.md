@@ -1,6 +1,8 @@
-# 深夜文库 Android App —— 原生外壳版（v1.3）
+# 深夜文库 Android App —— 原生外壳版（v1.4）
 
 把 `shenye.72tool.com` 做成**看起来是原生 App、内核仍是网站**的安卓应用。
+
+**v1.4 重要修复**：**移除会跳到短信扣费落地页（land.cntntstok.com 等）的开屏广告**。旧版内置了 `bauval.org/14` 的 Popunder 弹窗位（硬编码在 APK 内，关后台无效），每天首次启动把用户弹到成人/扣费页。v1.4 彻底删除该内置代码 + 清除老用户本机残留的广告缓存 + 增加黑名单校验（bauval/14、jads、ero-labs、cntntstok、popunder 等域名一律不加载）。后台插屏区没启用安全代码时，App 直接进主界面，不弹任何开屏广告。
 
 **v1.3 修复**：打开黑屏 —— 加载失败/超时现在显示诊断页（重试按钮 + 关 VPN 提示），开屏广告加 9 秒硬超时，绝不再无限黑屏。
 
@@ -45,7 +47,7 @@
 等约 1 分钟，状态变绿 ✅（构建成功的那次：`https://github.com/706435396/xiaoshuo/actions/runs/45928745400`）
 
 ### 步骤 2：下载 APK
-在该次运行页面往下拉，找到 **Artifacts** 区域的 `shenye-reader-apk`，点击下载，得到 zip，解压出 `shenye-reader-v1.3.apk`。
+在该次运行页面往下拉，找到 **Artifacts** 区域的 `shenye-reader-apk`，点击下载，得到 zip，解压出 `shenye-reader-v1.4.apk`。
 
 ### 步骤 3：装到手机
 把 APK 传到手机（微信文件传输助手 / 数据线 / 网盘都行），在手机上点开安装。
