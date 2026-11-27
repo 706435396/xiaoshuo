@@ -1,9 +1,13 @@
-# 深夜文库 Android App —— 原生外壳版（v1.1）
+# 深夜文库 Android App —— 原生外壳版（v1.2）
 
 把 `shenye.72tool.com` 做成**看起来是原生 App、内核仍是网站**的安卓应用。
 
-**v1.1 主要变化**：不再是「打开就是网站」的裸 WebView，增加了原生启动页、顶部标题栏、
-底部四 Tab 和本机最近阅读书架。网站内容/广告仍走线上，改网站不用重新打包 App。
+**v1.2 主要变化**（在 v1.1 原生外壳基础上）：
+- **书架改原生网格封面**：3 列渐变封面（书名首字生成，不依赖网络图），点封面续读、长按移除
+- **开屏广告**：每天首次启动展示，6 秒倒计时可随时「跳过」；代码复用后台插屏区，加载失败自动跳过
+- **版本更新提示**：启动后台检查 `app-update.json`，有新版本弹窗提示，同一版本只提醒一次
+
+网站内容/广告仍走线上，改网站不用重新打包 App。
 
 ---
 
@@ -16,7 +20,8 @@
 │  │  WebView：网站内容 + 广告 + 章节        │───联网──> https://shenye.72tool.com
 │  └──────────────────────────────────────┘    │
 │  底栏：首页 / 书架 / 分类 / 我的               │
-│  书架：最近阅读保存在手机本地（SharedPreferences）│
+│  书架：原生网格封面，最近阅读保存在手机本地       │
+│  开屏：每天一次广告（可跳过）+ 启动检查新版本      │
 └───────────────────────────────────────────────┘
 ```
 
@@ -38,7 +43,7 @@
 等约 1 分钟，状态变绿 ✅（构建成功的那次：`https://github.com/706435396/xiaoshuo/actions/runs/45928745400`）
 
 ### 步骤 2：下载 APK
-在该次运行页面往下拉，找到 **Artifacts** 区域的 `shenye-reader-apk`，点击下载，得到 zip，解压出 `shenye-reader-v1.1.apk`。
+在该次运行页面往下拉，找到 **Artifacts** 区域的 `shenye-reader-apk`，点击下载，得到 zip，解压出 `shenye-reader-v1.2.apk`。
 
 ### 步骤 3：装到手机
 把 APK 传到手机（微信文件传输助手 / 数据线 / 网盘都行），在手机上点开安装。
@@ -84,10 +89,19 @@ cd android-app
 ### 1. 改网址 / App 名 / 底部 Tab
 - 网址：`app/src/main/java/com/shenye/reader/MainActivity.java` 顶部 `HOME_URL`
 - 底部 Tab：同文件 `TAB_NAMES`（显示名）、`TAB_URLS`（跳转地址）两个数组，
-  目前是 `首页 / 书架 / 分类 / 我的`；其中「书架」为 `null` 表示弹原生最近阅读窗，
+  目前是 `首页 / 书架 / 分类 / 我的`；其中「书架」为 `null` 表示弹原生网格书架，
   想改成跳网页直接填 URL 即可。
 - 名称：`app/src/main/res/values/strings.xml` 的 `app_name`
 - 改完重新构建（见二、三）
+
+### 1b. 开屏广告 / 版本提示（不用重打包网站）
+- **开屏广告代码**：默认内置 `SPLASH_AD_DEFAULT`（SocialBar_1），首次安装立即可用；
+  App 启动时会从后台 `/api/adslots` 的 `interstitial` 区拉最新代码存缓存，**下次启动生效**。
+  所以你在后台「插屏弹窗」区换广告代码，开屏和插屏会一起更新（不用重打包 APK）。
+- **每天一次**：由 `sy_flags` 里的 `splash_ad_date` 控制，同一天只弹一次；想测试可清 App 数据。
+- **版本更新提示**：改网站根目录的 `app-update.json`（`versionCode` 比 App 内的 `LOCAL_VERSION`
+  大就会提示，`apkUrl` 是下载地址）。发新 APK 时记得同步升 `build.gradle` 的 `versionCode`
+  和 `MainActivity.java` 的 `LOCAL_VERSION`，否则老用户不会收到提示。
 
 ### 2. 广告能正常显示的关键设置（已在代码里配好）
 ```java
