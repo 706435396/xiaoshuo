@@ -62,4 +62,35 @@ html, html body{
     max-width:none !important;
     border-radius:14px !important;
   }
+
+  /* ---------- 手机首页优化（截图反馈：顶栏裁切 / 分类裁切 / 卡片过密） ---------- */
+  /* 1. 顶部 header：压缩内边距与按钮，避免登录按钮在 390px 被挤出屏幕 */
+  html header > div{ padding-left:10px !important; padding-right:10px !important; gap:6px !important; }
+  html header a{ font-size:15px !important; gap:0 !important; white-space:nowrap !important; }
+  html header #authBtn{ padding:0 8px !important; gap:2px !important; }
+  html header #authBtn #authLabel{ display:none !important; } /* 只留头像图标，省出宽度 */
+  html header #themeToggle{ display:none !important; } /* 窄屏隐藏主题切换（深色为本站默认） */
+  html header input[type="search"]{ padding:6px 10px !important; font-size:13px !important; }
+  html header #searchBtn{ width:34px !important; height:34px !important; flex-shrink:0 !important; }
+
+  /* 2. 分类横滑：右侧留白给渐隐提示（home-mobile.js 插入遮罩），末端不被硬性裁切 */
+  html #catBar{ padding-right:30px !important; scroll-padding-right:30px; -webkit-overflow-scrolling:touch; }
+  html #catBar > button{ flex-shrink:0 !important; }
+
+  /* 3. 书卡：加大标题/元信息触控与可读性，卡片间距更透气 */
+  html #bookGrid{ gap:10px !important; }
+  html #bookGrid .card{ padding:12px !important; }
+  html #bookGrid .card h3{ font-size:15px !important; line-height:1.4 !important; }
+  html #bookGrid .card h3 a{ display:block; }
+  html #bookGrid .card .fav-btn{ width:28px !important; height:28px !important; }
+  html #bookGrid .card .mt-1\.5{ margin-top:8px !important; gap:10px !important; font-size:12px !important; }
+
+  /* 4. 今日推荐：与主列表拉开层次，书 card 内边距统一 */
+  html #dailyRec{ margin-bottom:20px !important; }
+  html #dailyRecGrid{ gap:8px !important; }
+  html #dailyRecGrid .card{ padding:12px !important; }
+
+  /* 5. 主内容上下留白收敛，首屏能看到更多书 */
+  html main{ padding-top:14px !important; }
+  html #mobileShelf, html #dailyRec{ margin-bottom:16px !important; }
 }
