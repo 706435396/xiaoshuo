@@ -35,9 +35,17 @@
         '<button id="agegate-no" style="width:100%;margin-top:10px;background:transparent;color:#9a9a9a;font-size:14px;border:1px solid #333;border-radius:10px;padding:11px 0;cursor:pointer">未满 18 岁，离开</button>' +
       '</div>';
     document.body.appendChild(wrap);
-    document.getElementById('agegate-yes').addEventListener('click', function () {
+    document.getElementById('agegate-yes').addEventListener('click', function (e) {
+      // 关键：阻止这次点击冒泡到 document，避免被背后联盟脚本当成「首次交互」触发跳转
+      e.stopPropagation();
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
       setVerified();
       wrap.parentNode && wrap.parentNode.removeChild(wrap);
+      // 通知广告渲染器：年龄门已通过，可以安全注入联盟广告（点击隔离已解除）
+      try {
+        document.dispatchEvent(new CustomEvent('sy:age-ok'));
+        window.__SY_AGE_OK__ = true;
+      } catch (err) {}
     });
     document.getElementById('agegate-no').addEventListener('click', function () {
       try { window.location.href = 'about:blank'; } catch (e) { window.close(); }
