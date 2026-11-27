@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
     private static final String UPDATE_URL = "https://shenye.72tool.com/app-update.json";
     private static final String APK_DOWNLOAD_URL =
             "https://github.com/706435396/xiaoshuo/actions/workflows/build-apk.yml";
-    private static final int LOCAL_VERSION = 3;   // 与 build.gradle versionCode 保持一致
+    private static final int LOCAL_VERSION = 4;   // 与 build.gradle versionCode 保持一致
 
     // 开屏广告内置代码（SocialBar_1，与后台插屏区一致；首次安装立即可用，后台更新后下次启动生效）
     private static final String SPLASH_AD_DEFAULT =
@@ -106,6 +106,8 @@ public class MainActivity extends Activity {
     private String pendingJs = null;
     private long lastBackAt = 0;
     private boolean splashClosed = false;
+    private boolean mainLoadPending = false;
+    private Runnable loadTimeoutRunnable;
     private final Handler handler = new Handler();
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -160,6 +162,8 @@ public class MainActivity extends Activity {
                 closeSplash();
             }
         }, 1500);
+        // 硬兜底：无论开屏广告是否卡住，9 秒后一定进主界面
+        handler.postDelayed(this::closeSplash, 9000);
         new Thread(this::prepareSplashAd).start();
         new Thread(this::checkUpdate).start();
     }
@@ -497,8 +501,24 @@ public class MainActivity extends Activity {
             }
 
             @Override
+            public void onPageStarted(WebView w, String url, Bitmap favicon) {
+                super.onPageStarted(w, url, favicon);
+                // 主文档开始加载 → 15 秒兜底：还没 onPageFinished 就显示诊断页
+                if (pageUrlIsSite(url)) {
+                    mainLoadPending = true;
+                    handler.removeCallbacks(loadTimeoutRunnable);
+                    loadTimeoutRunnable = () -> {
+                        if (mainLoadPending) showLoadError(w);
+                    };
+                    handler.postDelayed(loadTimeoutRunnable, 15000);
+                }
+            }
+
+            @Override
             public void onPageFinished(WebView w, String url) {
                 super.onPageFinished(w, url);
+                mainLoadPending = false;
+                handler.removeCallbacks(loadTimeoutRunnable);
                 updateTitle(url);
                 saveRecentIfReader(url);
                 if (pendingJs != null) {
@@ -509,14 +529,11 @@ public class MainActivity extends Activity {
 
             @Override
             public void onReceivedError(WebView w, WebResourceRequest req, WebResourceError err) {
-                if (req != null && req.isForMainFrame() && (w.getUrl() == null
-                        || w.getUrl().equals("about:blank"))) {
-                    w.loadUrl("data:text/html;charset=utf-8,"
-                            + "<meta name='viewport' content='width=device-width'>"
-                            + "<body style='background:#0e0e14;color:#ddd;font:16px sans-serif;"
-                            + "display:flex;align-items:center;justify-content:center;height:80vh'>"
-                            + "<div style='text-align:center'>网络开小差了<br><br>"
-                            + "<a href='" + HOME_URL + "' style='color:#ff9500'>点击重试</a></div></body>");
+                // 主框架加载失败就显示诊断页（不再纠结 getUrl 是否为 null —— 那是黑屏根因）
+                if (req != null && req.isForMainFrame()) {
+                    mainLoadPending = false;
+                    handler.removeCallbacks(loadTimeoutRunnable);
+                    showLoadError(w);
                 }
             }
         });
@@ -545,6 +562,39 @@ public class MainActivity extends Activity {
             android.content.Intent i = new android.content.Intent(
                     android.content.Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(i);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private boolean pageUrlIsSite(String url) {
+        if (TextUtils.isEmpty(url)) return false;
+        return url.startsWith("http://") || url.startsWith("https://");
+    }
+
+    /** 加载失败/超时：显示可读诊断页（带重试按钮 + 关 VPN 提示），不再留黑屏 */
+    private void showLoadError(WebView w) {
+        if (w == null) return;
+        String html = "<!doctype html><html><head><meta charset='utf-8'>"
+                + "<meta name='viewport' content='width=device-width,initial-scale=1'></head>"
+                + "<body style='margin:0;background:#0e0e14;color:#e8e8ee;font-family:sans-serif;"
+                + "min-height:100vh;display:flex;align-items:center;justify-content:center'>"
+                + "<div style='max-width:340px;padding:28px;text-align:center'>"
+                + "<div style='font-size:38px;margin-bottom:8px'>🌙</div>"
+                + "<div style='font-size:20px;color:#ff9500;margin-bottom:16px'>深夜文库 · 连不上</div>"
+                + "<div style='font-size:14px;line-height:1.8;color:#a8a8b4'>"
+                + "网站没能加载出来。通常是网络导致的：<br><br>"
+                + "① 如果你开着 <b style='color:#ff9500'>VPN / 代理</b>，请先<b>关掉</b>再重试<br>"
+                + "② 换一下网络（Wi-Fi ↔ 手机流量）<br>"
+                + "③ 用手机浏览器打开 shenye.72tool.com 测试<br>"
+                + "</div>"
+                + "<div onclick='location.href=\"" + HOME_URL + "?t=\"+Date.now()' "
+                + "style='margin-top:24px;background:#ff9500;color:#000;padding:13px 0;"
+                + "border-radius:10px;font-size:16px;font-weight:bold'>重新加载</div>"
+                + "<div onclick='location.href=\"" + HOME_URL + "?t=\"+Date.now()' "
+                + "style='margin-top:12px;color:#7c9cff;font-size:14px'>再试一次</div>"
+                + "</div></body></html>";
+        try {
+            w.loadDataWithBaseURL(HOME_URL, html, "text/html", "utf-8", null);
         } catch (Exception ignored) {
         }
     }
