@@ -8,7 +8,10 @@
  *   2. 字号 / 背景(夜间等) / 行距 / 翻页方式 持久化到 localStorage，
  *      重开页面自动恢复：通过「重放点击」驱动 read.html 自身的控件，
  *      保持闭包状态与界面一致。
- *   3. 新增两个控件按钮：行距（紧凑/标准/宽松）、翻页（上下滚动/左右翻页）。
+ *   3. 行距 / 翻页控件：
+ *      - 桌面端：顶部控制栏两个小按钮（沿用 v1 样式）。
+ *      - 手机端：右下角悬浮「Aa」入口 → 底部设置面板，大号分段按钮，
+ *        避开顶部拥挤的控制栏与底部章节导航条，触摸友好。
  *
  * 设计要点：
  *   - 只用稳定 ID：fontInc/fontDec/bgToggle/chapPrev/chapNext/txtContent/txtWrap。
@@ -116,7 +119,27 @@
     }
   }
 
-  // ---- 新增控件按钮 ----
+  function nameLh(v) { var i = LH_VALS.indexOf(v); return LH_NAMES[i < 0 ? 1 : i]; }
+
+  // ============ 统一设置入口：桌面按钮 / 手机面板共用，避免状态分叉 ============
+  function syncUI() {
+    var lhBtn = $('syLhBtn'), modeBtn = $('syModeBtn');
+    if (lhBtn) lhBtn.textContent = '行距:' + nameLh(cfg.lh);
+    if (modeBtn) modeBtn.textContent = cfg.mode === 'flip' ? '左右翻页' : '上下滚动';
+    var segLh = $('sySegLh'), segMode = $('sySegMode');
+    if (segLh) segLh.querySelectorAll('button').forEach(function (b) {
+      b.classList.toggle('on', parseFloat(b.getAttribute('data-v')) === cfg.lh);
+    });
+    if (segMode) segMode.querySelectorAll('button').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-v') === cfg.mode);
+    });
+  }
+  function setLh(v) { cfg.lh = v; applyLineHeight(); syncUI(); saveCfg(); }
+  function setMode(m) { cfg.mode = m; applyModeUI(); syncUI(); saveCfg(); }
+  function cycleLh() { var i = LH_VALS.indexOf(cfg.lh); setLh(LH_VALS[(i + 1) % LH_VALS.length]); }
+  function toggleMode() { setMode(cfg.mode === 'flip' ? 'scroll' : 'flip'); }
+
+  // ---- 桌面端：顶部控制栏两个小按钮（v1 兼容保留）----
   function makeBtn(id, title, text) {
     var b = document.createElement('button');
     b.id = id;
@@ -130,26 +153,104 @@
     if (!bar || $('syLhBtn')) return;
     var lhBtn = makeBtn('syLhBtn', '切换行距', '行距:' + nameLh(cfg.lh));
     var modeBtn = makeBtn('syModeBtn', '切换翻页方式', cfg.mode === 'flip' ? '左右翻页' : '上下滚动');
-    // 插到 bgToggle 之后，保持控件聚在一起
     var bg = $('bgToggle');
     if (bg && bg.nextSibling) bar.insertBefore(modeBtn, bg.nextSibling);
-    else if (bg) bar.appendChild(modeBtn);
     else bar.appendChild(modeBtn);
     bar.insertBefore(lhBtn, modeBtn);
-
-    lhBtn.onclick = function () {
-      var i = LH_VALS.indexOf(cfg.lh);
-      cfg.lh = LH_VALS[(i + 1) % LH_VALS.length];
-      this.textContent = '行距:' + nameLh(cfg.lh);
-      applyLineHeight(); saveCfg();
-    };
-    modeBtn.onclick = function () {
-      cfg.mode = cfg.mode === 'flip' ? 'scroll' : 'flip';
-      this.textContent = cfg.mode === 'flip' ? '左右翻页' : '上下滚动';
-      applyModeUI(); saveCfg();
-    };
+    lhBtn.onclick = cycleLh;
+    modeBtn.onclick = toggleMode;
   }
-  function nameLh(v) { var i = LH_VALS.indexOf(v); return LH_NAMES[i < 0 ? 1 : i]; }
+
+  // ============ 手机端：右下角悬浮入口 + 底部设置面板 ============
+  var MOBILE_CSS = '' +
+    '#syToolFab{display:none;position:fixed;right:14px;bottom:calc(62px + env(safe-area-inset-bottom,0px));' +
+      'width:48px;height:48px;border-radius:50%;z-index:9970;' +
+      'background:linear-gradient(135deg,#8b6cff,#6545d8);color:#fff;' +
+      'font-size:15px;font-weight:800;letter-spacing:.3px;border:1px solid rgba(255,255,255,.28);' +
+      'box-shadow:0 6px 18px rgba(102,69,216,.5);align-items:center;justify-content:center;' +
+      '-webkit-tap-highlight-color:transparent;user-select:none;padding:0;cursor:pointer}' +
+    '#syToolMask{display:none;position:fixed;inset:0;z-index:9978;' +
+      'background:rgba(6,4,16,.55);backdrop-filter:blur(2px)}' +
+    '#syToolSheet{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9979;' +
+      'background:linear-gradient(180deg,#1d1a30,#151322);border-top:1px solid rgba(148,120,255,.35);' +
+      'border-radius:18px 18px 0 0;padding:8px 18px calc(20px + env(safe-area-inset-bottom,0px));' +
+      'box-shadow:0 -10px 40px rgba(0,0,0,.5);color:#e8e5f5;' +
+      'transform:translateY(105%);transition:transform .26s ease}' +
+    '#syToolMask.show{display:block}' +
+    '#syToolSheet.show{display:block;transform:translateY(0)}' +
+    '#syToolSheet .sy-grip{width:38px;height:4px;border-radius:3px;background:rgba(255,255,255,.28);margin:2px auto 10px}' +
+    '#syToolSheet .sy-title{font-size:13px;color:#b9b0d8;text-align:center;margin-bottom:14px;font-weight:600}' +
+    '#syToolSheet .sy-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}' +
+    '#syToolSheet .sy-label{width:38px;flex:none;font-size:13px;color:#b9b0d8}' +
+    '#syToolSheet .sy-seg{flex:1;display:flex;gap:6px;background:rgba(255,255,255,.06);border-radius:12px;padding:4px}' +
+    '#syToolSheet .sy-seg button{flex:1;min-height:44px;border:0;border-radius:9px;cursor:pointer;' +
+      'background:transparent;color:#cfc9ea;font-size:14px;font-weight:600;' +
+      '-webkit-tap-highlight-color:transparent;transition:background .18s,color .18s}' +
+    '#syToolSheet .sy-seg button.on{background:linear-gradient(135deg,#8b6cff,#6545d8);color:#fff;' +
+      'box-shadow:0 3px 10px rgba(102,69,216,.45)}' +
+    '@media (max-width:640px){#syToolFab{display:flex}#syLhBtn,#syModeBtn{display:none!important}}' +
+    '@media (min-width:641px){#syToolFab,#syToolMask,#syToolSheet{display:none!important}}';
+
+  function openSheet() {
+    var m = $('syToolMask'), s = $('syToolSheet');
+    if (m) m.classList.add('show');
+    if (s) s.classList.add('show');
+  }
+  function closeSheet() {
+    var m = $('syToolMask'), s = $('syToolSheet');
+    if (m) m.classList.remove('show');
+    if (s) s.classList.remove('show');
+  }
+  function initMobileTools() {
+    if (!$('sy-mobile-tools-css')) {
+      var st = document.createElement('style');
+      st.id = 'sy-mobile-tools-css';
+      st.textContent = MOBILE_CSS;
+      (document.head || document.documentElement).appendChild(st);
+    }
+    if ($('syToolFab')) return;
+
+    var fab = document.createElement('button');
+    fab.id = 'syToolFab';
+    fab.type = 'button';
+    fab.setAttribute('aria-label', '阅读设置：行距与翻页');
+    fab.title = '阅读设置（行距 / 翻页）';
+    fab.textContent = 'Aa';
+    fab.addEventListener('click', openSheet);
+    document.body.appendChild(fab);
+
+    var mask = document.createElement('div');
+    mask.id = 'syToolMask';
+    mask.addEventListener('click', closeSheet);
+    document.body.appendChild(mask);
+
+    var sheet = document.createElement('div');
+    sheet.id = 'syToolSheet';
+    sheet.innerHTML =
+      '<div class="sy-grip"></div>' +
+      '<div class="sy-title">阅读设置</div>' +
+      '<div class="sy-row"><span class="sy-label">行距</span>' +
+        '<div class="sy-seg" id="sySegLh">' +
+          LH_VALS.map(function (v, i) { return '<button type="button" data-v="' + v + '">' + LH_NAMES[i] + '</button>'; }).join('') +
+        '</div></div>' +
+      '<div class="sy-row"><span class="sy-label">翻页</span>' +
+        '<div class="sy-seg" id="sySegMode">' +
+          '<button type="button" data-v="scroll">上下滚动</button>' +
+          '<button type="button" data-v="flip">左右翻页</button>' +
+        '</div></div>';
+    document.body.appendChild(sheet);
+
+    $('sySegLh').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-v]');
+      if (b) setLh(parseFloat(b.getAttribute('data-v')));
+    });
+    $('sySegMode').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-v]');
+      if (b) setMode(b.getAttribute('data-v'));
+    });
+    sheet.querySelector('.sy-grip').addEventListener('click', closeSheet);
+    syncUI();
+  }
 
   // ---- 左右滑动切章（仅在 flip 模式）----
   function markSuppress() { suppressClick = true; setTimeout(function () { suppressClick = false; }, 400); }
@@ -198,10 +299,12 @@
       // 2) 重放保存的字号/背景（重放期间被包裹的回调不写存储）
       replayFont();
       replayBg();
-      // 3) 应用行距/翻页方式 UI，新增控件，绑定滑动
+      // 3) 应用行距/翻页方式 UI，创建控件，绑定滑动
       applyLineHeight();
       applyModeUI();
       addControls();
+      initMobileTools();
+      syncUI();
       bindSwipe();
       // 4) 章节切换会重渲染正文，行距样式是 !important 不受影响；
       //    提示条位于 txtWrap 也不受影响，无需额外处理。
