@@ -53,7 +53,7 @@ jobs:
         run: |
           mkdir -p apk-out
           cp android-app/app/build/outputs/apk/release/app-release.apk \
-             "apk-out/shenye-reader-v1.0.apk"
+             "apk-out/shenye-reader-v1.1.apk"
           ls -lh apk-out/
 
       - name: Upload APK artifact
