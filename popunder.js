@@ -1,42 +1,84 @@
-/* 深夜文库 · Popunder 弹窗广告（首次访问 · 新标签页打开）
+/* 深夜文库 · 插屏弹窗渲染器（Adsterra Interstitial · 首次访问弹一次）
  * ============================================================
- * 需求：每个访客首次访问触发一次广告，广告在【新标签页】打开，
- *       当前小说页面留在原标签、不跟着跳转到广告站。
+ * 需求：每个访客首次访问触发一次【插屏广告】——即截图那种居中弹窗、
+ *       带图标/星级/商品图/右上角关闭按钮、背景遮罩的样式。
+ *       这类广告是 Adsterra 的 Interstitial 格式，代码由联盟后台生成，
+ *       每个广告位唯一，因此做成【后台可配置】：在 /admin-ads 的
+ *       「插屏弹窗」标签粘贴联盟 <script> 代码即可，随时可换、无需改本站代码。
  *
  * 实现：
- *   1. localStorage 门控：同一浏览器终身只加载一次（KEY=sy_pop_done_v1）。
- *   2. 加载 Adsterra Popunder 脚本（abscloud.org/1），该脚本本身即标准
- *      popunder：在用户首次交互时 window.open 一个新标签到广告落地页，
- *      原标签不动。落地页由联盟动态下发，无需固定 URL。
+ *   1. 读取 /api/adslots 的 zones.interstitial，取第一个 enabled && value 非空
+ *      的广告位（只弹一个，避免多个插屏叠加互相遮挡）。
+ *   2. localStorage 门控：同一浏览器终身只加载一次（KEY=sy_pop_done_v1，
+ *      沿用旧 key，已弹过的老访客不会重复弹）。
+ *   3. HTML 代码写入隐藏容器后重建其中的 <script> 以触发执行——这是
+ *      动态注入联盟脚本的标准可靠做法（innerHTML 里的 script 不会自动执行）。
+ *      联盟脚本自己负责渲染居中弹窗、遮罩、关闭按钮及落地页跳转。
  *
- * 说明：浏览器禁止「无用户手势」的自动弹窗，因此广告由联盟脚本在用户
- *      首次点击/触摸页面时弹出——这是 popunder 的标准且唯一可靠实现。
- *      之前「当前页跳到飞鸟VPN」是另一个 Social Bar 脚本(bauval/14)所致，
- *      已关闭；本脚本用的 abscloud/1 是新标签弹窗，不会同标签跳转。
+ * 调试：URL 带 ?adpreview=时间戳 时强制跳过门控（供后台「预览三端」反复查看）。
  * ============================================================
  */
 (function () {
   'use strict';
 
   var KEY = 'sy_pop_done_v1';
-  var SRC = 'https://abscloud.org/1/0af312921b8958cf650f130cb9ee40f7';
+  var API = '/api/adslots';
 
-  // 已弹过则不再加载
-  try { if (localStorage.getItem(KEY) === '1') return; } catch (e) {}
-  // 先写门控，避免多次加载造成重复弹窗
-  try { localStorage.setItem(KEY, '1'); } catch (e) {}
+  // 后台预览模式：URL 带 adpreview 参数时绕过门控，便于反复查看插屏效果
+  var previewMode = /[?&]adpreview=/.test(location.search);
 
-  function load() {
-    var s = document.createElement('script');
-    s.src = SRC;
-    s.async = true;
-    s.setAttribute('data-cfasync', 'false');
-    (document.head || document.body).appendChild(s);
+  function alreadyFired() {
+    if (previewMode) return false;
+    try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; }
+  }
+  function markFired() {
+    if (previewMode) return;
+    try { localStorage.setItem(KEY, '1'); } catch (e) {}
+  }
+
+  // 把联盟 HTML 代码里的 script 重建以触发执行（与 adslots.js 同一成熟做法）
+  function injectHtml(html) {
+    // 用隐藏容器承载，避免污染页面结构；联盟插屏脚本通常自行创建全屏 fixed 弹层，
+    // 本容器仅作为脚本宿主，不参与展示。
+    var box = document.createElement('div');
+    box.setAttribute('data-sy-interstitial', '1');
+    box.style.cssText = 'position:fixed;left:-99999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
+    box.innerHTML = html;
+    var scripts = [].slice.call(box.querySelectorAll('script'));
+    scripts.forEach(function (o) {
+      var s = document.createElement('script');
+      for (var i = 0; i < o.attributes.length; i++) s.setAttribute(o.attributes[i].name, o.attributes[i].value);
+      s.textContent = o.textContent;
+      o.parentNode.replaceChild(s, o);
+    });
+    (document.body || document.documentElement).appendChild(box);
+  }
+
+  function fire(slot) {
+    if (!slot || !slot.value) return;
+    if (alreadyFired()) return;
+    markFired(); // 先写门控再注入，避免脚本重复加载/多次弹
+    injectHtml(slot.value);
+  }
+
+  function loadAndFire() {
+    fetch(API + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var list = (d && d.zones && d.zones.interstitial) || [];
+        // 只取第一个启用且有内容的插屏位
+        var slot = null;
+        for (var i = 0; i < list.length; i++) {
+          if (list[i] && list[i].enabled && list[i].value) { slot = list[i]; break; }
+        }
+        fire(slot);
+      })
+      .catch(function () { /* 后台不可用：静默，不影响阅读 */ });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', load, { once: true });
+    document.addEventListener('DOMContentLoaded', loadAndFire, { once: true });
   } else {
-    load();
+    loadAndFire();
   }
 })();
