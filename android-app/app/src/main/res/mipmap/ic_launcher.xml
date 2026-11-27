@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 7.x 回退图标：纯矢量，带深色底 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#0E0E14"
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z" />
+    <path
+        android:fillColor="#7C9CFF"
+        android:pathData="M22,34 L51,40 L51,76 L22,70 Z" />
+    <path
+        android:fillColor="#A9BFFF"
+        android:pathData="M86,34 L57,40 L57,76 L86,70 Z" />
+    <path
+        android:fillColor="#4A6FE0"
+        android:pathData="M51,40 L57,40 L57,76 L51,76 Z" />
+</vector>
