@@ -24,6 +24,8 @@ const AGE_VER = '2'; // 年龄门版本（v2: 确认按钮点击隔离 + 派发 
 const POPUNDER_TAG = '<script src="/popunder.js?v=' + POPUNDER_VER + '" data-sy-pop="1"><\/script>';
 const MOBILE_VER = '1'; // 移动端自适应增强版本；升级即全站破缓存
 const MOBILE_TAG = '<link rel="stylesheet" href="/mobile-adapt.css?v=' + MOBILE_VER + '" data-sy-mobile="1">';
+const READER_VER = '1'; // 阅读体验增强（左右滑屏切章 + 字号/行距/夜间/翻页方式持久化）；仅 TXT 阅读页生效
+const READER_TAG = '<script src="/reader-enhance.js?v=' + READER_VER + '" data-sy-reader="1"><\/script>';
 
 export async function onRequest(context) {
   const { next } = context;
@@ -64,6 +66,10 @@ export async function onRequest(context) {
     // --- 3) 弹窗脚本注入：无 </body> 或页面已带标记则跳过（幂等） ---
     if (!html.includes('data-sy-pop') && /<\/body>/i.test(html)) {
       html = html.replace(/<\/body>/i, POPUNDER_TAG + '\n</body>');
+    }
+    // 阅读体验增强：仅 TXT 阅读页内部生效（脚本自身判断 #txtContent 存在与否），全站注入幂等
+    if (!html.includes('data-sy-reader') && /<\/body>/i.test(html)) {
+      html = html.replace(/<\/body>/i, READER_TAG + '\n</body>');
     }
 
     const headers = new Headers(original.headers);
