@@ -6,7 +6,7 @@
  *      让 1505 个静态书页 / 分类页 / 合规页无需逐个改动即可统一换肤。
  *   2. 把页面里 /adboot.js、/adfoot.js 的引用加上版本号 ?v=5，强制破 CF 边缘缓存
  *      （源脚本已更新为"停用写死联盟广告"，但旧 URL 被 CDN 缓存 HIT 拿到旧版）。
- *   3. 全站注入 /popunder.js（首次访问新标签弹窗广告），幂等、只注一次。
+ *   3. 全站注入 /popunder.js（首次访问插屏弹窗广告，代码来自后台 interstitial 区），幂等、只注一次。
  *
  * 设计要点：
  *   1. 只处理 content-type 含 text/html 的响应，API / JSON / 图片直接放行。
@@ -16,22 +16,10 @@
 const THEME_TAG = '<link rel="stylesheet" href="/theme.css" data-sy-theme="1">';
 const AD_VER = '5'; // 升级此值即可全站强制刷新 adboot/adfoot 脚本缓存（v5: 彻底关闭 Popunder 弹窗）
 const ADSLOTS_VER = '5'; // adslots.js 渲染器版本（atOptions 绝对定位防撑开侧栏）；升级即全站破缓存
-const POPUNDER_VER = '1'; // 弹窗脚本版本；升级即全站破缓存
+const POPUNDER_VER = '2'; // 弹窗/插屏脚本版本；升级即全站破缓存（v2: 改为后台可配置插屏）
 const POPUNDER_TAG = '<script src="/popunder.js?v=' + POPUNDER_VER + '" data-sy-pop="1"><\/script>';
 
 export async function onRequest(context) {
-
-// --- pages.dev 重复内容防护：非内部回源请求 301 到正式域名 ---
-// Worker 未命中 R2 时会带 X-Chapter-Fallback:1 回源 pages.dev，必须放行，
-// 否则重定向回自定义域会再次命中 Worker 形成循环。
-const _reqUrl = new URL(context.request.url);
-const _host = _reqUrl.hostname.toLowerCase();
-const _isPagesDev = _host === 'xiaoshuo-5hn.pages.dev' || _host.endsWith('.pages.dev');
-const _isFallback = context.request.headers.get('X-Chapter-Fallback') === '1';
-if (_isPagesDev && !_isFallback) {
-  return Response.redirect('https://shenye.72tool.com' + _reqUrl.pathname + _reqUrl.search, 301);
-}
-
   const { next } = context;
   const original = await next();
 
