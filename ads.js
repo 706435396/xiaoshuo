@@ -111,16 +111,27 @@
     });
   }
 
-  function load() {
+  function doLoad() {
     return fetch(API + '?t=' + Date.now(), { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(apply)
       .catch(function () { hideAll(); }); // API 不可用：全部隐藏，不留空白
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
-  else load();
+  // 年龄门显示期间暂不注入联盟广告，等 sy:age-ok（年龄确认后派发）再注入，
+  // 避免遮罩背后的联盟脚本劫持确认按钮的点击。
+  var _started = false;
+  function loadOnce() { if (_started) return; _started = true; doLoad(); }
+  function start() {
+    var gate = document.getElementById('agegate');
+    if (gate) document.addEventListener('sy:age-ok', loadOnce, { once: true });
+    else loadOnce();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+  setTimeout(loadOnce, 8000); // 兜底：事件丢失时最多延后 8 秒加载
 
   // 兼容旧调用与控制台调试
-  window.SY_ADS = { refresh: load, zones: ['reader-top', 'reader-bottom'] };
+  window.SY_ADS = { refresh: loadOnce, zones: ['reader-top', 'reader-bottom'] };
 })();
