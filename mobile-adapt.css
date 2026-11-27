@@ -1,0 +1,65 @@
+/* ============================================================
+ * 深夜文库 · 移动端自适应增强 (mobile-adapt)
+ * ============================================================
+ * 由 functions/_middleware.js 全站注入（在 theme.css 之后），仅窄屏生效。
+ * 目标：
+ *   1. 防止联盟横幅/固定宽元素撑破视口（手机被当"宽屏"渲染的根因）——
+ *      实测 screen.width=390 时 innerWidth 被撑到 492，导致页面看起来像 PC 版。
+ *   2. 阅读页 / 章节页手机排版优化（字号、行距、换行、内边距）。
+ *   3. 广告网格手机单列 + 联盟横幅限宽 + 站内浮窗底部全宽。
+ * 原则：只做布局层约束（限宽/缩放/定位），不隐藏、不修改联盟广告创意内容。
+ * ============================================================ */
+
+/* ---------- 视口防溢出（核心，全局）----------
+ * overflow-x:clip 相比 hidden 不会创建滚动容器，因此不破坏 position:sticky 顶栏
+ * 与联盟 fixed 弹层。max-width:100vw 阻止任何固定宽子元素把 layout viewport 撑大。
+ */
+html, html body{
+  max-width: 100vw !important;
+  overflow-x: clip !important;
+}
+
+@media (max-width: 640px){
+  /* 媒体元素不得超出屏幕（联盟图片/视频等比缩放，不裁切内容） */
+  html img, html video, html canvas{ max-width:100% !important; height:auto; }
+
+  /* ---------- 排版：书页 / 章节页 / 阅读页 ---------- */
+  html body{ font-size:15px !important; }
+  html .wrap{ padding:16px 12px 48px !important; width:100% !important; }
+  html .wrap h1{ font-size:1.45rem !important; }
+  html .wrap h2{ font-size:1.2rem !important; }
+  html .sec-title{ font-size:1.15rem !important; }
+  /* 正文可读性：加大字号/行距、强制换行，避免长句横向溢出 */
+  html #txtContent, html #chapterContent, html #content,
+  html .chapter-content, html .ch-content, html #viewer, html .ch-text{
+    font-size:17px !important;
+    line-height:1.85 !important;
+    letter-spacing:.2px !important;
+    overflow-wrap:break-word !important;
+    word-break:break-word !important;
+    max-width:100% !important;
+  }
+  /* 顶部搜索栏窄屏不挤压导航按钮 */
+  html header input[type="search"]{ min-width:0 !important; }
+
+  /* ---------- 广告自适应 ---------- */
+  /* 首页 hero 网格手机单列（侧栏 cat/shelf 在 lg:hidden 已隐藏） */
+  html .ad-grid-hero{ grid-template-columns:1fr !important; }
+  /* 联盟注入的带容器横幅：限宽不超视口、隐藏溢出（不遮挡整页） */
+  html div[id^="container-"]{ max-width:100vw !important; overflow:hidden !important; }
+  html .ad-cell{ max-width:100% !important; }
+
+  /* 站内浮窗：手机端改为底部抽屉式全宽，贴近原生 App 体验。
+   * 用 !important 覆盖 adpopup.js 写入的内联定位样式（内联无 !important）。
+   */
+  html [data-sy-floatbox]{
+    left:8px !important;
+    right:8px !important;
+    top:auto !important;
+    bottom:8px !important;
+    width:calc(100vw - 16px) !important;
+    height:80vh !important;
+    max-width:none !important;
+    border-radius:14px !important;
+  }
+}
