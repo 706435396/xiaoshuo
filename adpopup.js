@@ -44,19 +44,21 @@
   function open(url, opt) {
     opt = opt || {};
     close();
-    var mobile = Math.min(window.innerWidth, window.innerHeight) < 620 ||
-                 /android|iphone|ipad|mobile/i.test(navigator.userAgent || '');
+    // 手机判断：UA 优先（横屏 phones 也不误判），或以 CSS 视口宽度为准
+    var uaMobile = /android|iphone|ipad|ipod|mobile|windows phone/i.test(navigator.userAgent || '');
+    var mobile = uaMobile || window.innerWidth <= 640;
+    var vw = window.innerWidth, vh = window.innerHeight;
     var wrap = document.createElement('div');
     wrap.setAttribute('data-sy-floatbox', '1');
     wrap.style.cssText = 'position:fixed;z-index:' + zIndex + ';background:#12121a;' +
       'border:1px solid rgba(167,139,250,.5);border-radius:12px;overflow:hidden;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.6);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
     if (mobile) {
-      var w = Math.min(window.innerWidth - 24, MAX_W);
-      var h = Math.min(window.innerHeight * 0.72, MAX_H);
-      wrap.style.cssText += ';width:' + w + 'px;height:' + h + 'px;' +
-        'left:' + Math.round((window.innerWidth - w) / 2) + 'px;' +
-        'top:' + Math.round((window.innerHeight - h) / 2 - 20) + 'px';
+      // 手机：底部抽屉式全宽（与安全区适配），贴合手机浏览习惯
+      var w = vw - 16;
+      var h = Math.round(vh * 0.8);
+      wrap.style.cssText += ';left:8px;right:8px;width:' + w + 'px;height:' + h + 'px;' +
+        'top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));border-radius:14px';
     } else {
       wrap.style.cssText += ';width:' + MAX_W + 'px;height:' + MAX_H + 'px;right:20px;bottom:20px';
     }
