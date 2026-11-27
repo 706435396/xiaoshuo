@@ -10,8 +10,8 @@ android {
         applicationId 'com.shenye.reader'
         minSdk 24
         targetSdk 35
-        versionCode 1
-        versionName '1.0'
+        versionCode 2
+        versionName '1.1'
     }
 
     // 签名：本机/CI 用仓库里的 debug.keystore 签，出的包能直接装、能覆盖升级
