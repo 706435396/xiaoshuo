@@ -108,15 +108,30 @@
     });
   }
 
-  function load() {
+  function doLoad() {
     return fetch(API + '?t=' + Date.now(), { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(apply)
       .catch(function () { /* 后台不可用：网格保持空，:empty 规则自动隐藏 */ });
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
-  else load();
+  // 年龄门显示期间暂不注入联盟广告，避免脚本在遮罩背后监听点击、劫持「我已满18岁」那一下。
+  // 等 sy:age-ok 事件（用户确认后由 agegate.js 派发）再注入；无年龄门则立即注入。
+  var _started = false;
+  function loadOnce() { if (_started) return; _started = true; doLoad(); }
+  function start() {
+    var gate = document.getElementById('agegate');
+    if (gate) {
+      document.addEventListener('sy:age-ok', loadOnce, { once: true });
+    } else {
+      loadOnce();
+    }
+  }
 
-  window.SY_ADS = { refresh: load, zones: ZONES };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+  // 兜底：年龄门脚本异常/事件丢失时，最多延后 8 秒也要加载广告，绝不永久空白
+  setTimeout(loadOnce, 8000);
+
+  window.SY_ADS = { refresh: loadOnce, zones: ZONES };
 })();
