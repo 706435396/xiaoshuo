@@ -1,0 +1,7 @@
+{
+  "versionCode": 3,
+  "versionName": "1.2",
+  "note": "v1.2：新增原生网格书架（长按可删）、每天一次开屏广告（可跳过）、版本更新提示。",
+  "apkUrl": "https://github.com/706435396/xiaoshuo/actions/workflows/build-apk.yml",
+  "updatedAt": "2026-11-27"
+}
