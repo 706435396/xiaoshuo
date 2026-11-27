@@ -57,12 +57,11 @@ public class MainActivity extends Activity {
     private static final String UPDATE_URL = "https://shenye.72tool.com/app-update.json";
     private static final String APK_DOWNLOAD_URL =
             "https://github.com/706435396/xiaoshuo/actions/workflows/build-apk.yml";
-    private static final int LOCAL_VERSION = 4;   // 与 build.gradle versionCode 保持一致
+    private static final int LOCAL_VERSION = 5;   // 与 build.gradle versionCode 保持一致
 
-    // 开屏广告内置代码（SocialBar_1，与后台插屏区一致；首次安装立即可用，后台更新后下次启动生效）
-    private static final String SPLASH_AD_DEFAULT =
-            "<script data-cfasync='false' src='https://bauval.org/14/"
-            + "07158b53e5f5830c39ffe2a59f9e3b25'></script>";
+    // 开屏广告：不再内置会跳走的 Popunder 代码（旧版 bauval/14 会跳短信扣费落地页）。
+    // 开屏广告只从后台插屏区拉取；后台没启用/没代码时直接跳过开屏，不展示任何广告。
+    private static final String SPLASH_AD_DEFAULT = "";   // 空 = 无内置开屏广告
 
     private static final String[] TAB_NAMES = {"首页", "书架", "分类", "我的"};
     private static final String[] TAB_URLS = {
@@ -147,14 +146,18 @@ public class MainActivity extends Activity {
             web.restoreState(savedInstanceState);
         }
 
-        // 启动页 1.5s：优先用缓存/内置的广告代码（立即可用），网络拉取只更新下次的代码
+        // 迁移清理：老版本本机可能缓存了会跳走的 Popunder 广告代码，升级后一律清掉
+        if (!"1".equals(getFlag("safe_splash_migrated"))) {
+            setFlag("splash_ad_html", "");
+            setFlag("safe_splash_migrated", "1");
+        }
+        // 启动页 1.5s：仅当后台插屏区有启用且安全的代码时才展示开屏广告，否则直接进主界面
         handler.postDelayed(() -> {
             if (splashClosed) return;
             String adHtml = getFlag("splash_ad_html");
             if (TextUtils.isEmpty(adHtml)) {
-                adHtml = "<!doctype html><html><head><meta name='viewport' "
-                        + "content='width=device-width,initial-scale=1'></head><body "
-                        + "style='margin:0;background:#0e0e14'>" + SPLASH_AD_DEFAULT + "</body></html>";
+                closeSplash();          // 无广告代码：不弹开屏，直接进主界面
+                return;
             }
             if (shouldShowSplashAd()) {
                 showSplashAd(adHtml);
@@ -330,7 +333,7 @@ public class MainActivity extends Activity {
             HttpURLConnection conn = (HttpURLConnection) new URL(ADS_API + "?t=" + System.currentTimeMillis()).openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("X-Ad-Pass", ADS_PASS);
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 ShenyeReaderAndroid/3.0");
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 ShenyeReaderAndroid/4.0");
             conn.setConnectTimeout(6000);
             conn.setReadTimeout(6000);
             int code = conn.getResponseCode();
@@ -351,6 +354,15 @@ public class MainActivity extends Activity {
                 value = "<iframe src='" + value + "' style='width:100%;height:100%;border:0'></iframe>";
             }
             if (TextUtils.isEmpty(value)) return;
+            // 安全校验：含已知跳转型联盟域名/脚本的代码一律不缓存，防止误贴弹窗位又把用户弹到扣费页
+            String low = value.toLowerCase();
+            if (low.contains("bauval.org/14") || low.contains("bauval.org/1/")
+                    || low.contains("jads.co") || low.contains("juicyads")
+                    || low.contains("ero-labs") || low.contains("cntntstok")
+                    || low.contains("popunder")) {
+                setFlag("splash_ad_html", "");
+                return;
+            }
             final String html = "<!doctype html><html><head><meta name='viewport' "
                     + "content='width=device-width,initial-scale=1'>"
                     + "<style>html,body{margin:0;background:#0e0e14;color:#fff;overflow:hidden}"
@@ -376,7 +388,7 @@ public class MainActivity extends Activity {
             s.setJavaScriptEnabled(true);
             s.setDomStorageEnabled(true);
             s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-            s.setUserAgentString(s.getUserAgentString() + " ShenyeReaderAndroid/3.0");
+            s.setUserAgentString(s.getUserAgentString() + " ShenyeReaderAndroid/4.0");
             splashAd.setWebViewClient(new WebViewClient() {
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView v, String url) {
@@ -487,7 +499,7 @@ public class MainActivity extends Activity {
         }
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         String ua = s.getUserAgentString();
-        s.setUserAgentString(ua + " ShenyeReaderAndroid/3.0");
+        s.setUserAgentString(ua + " ShenyeReaderAndroid/4.0");
 
         v.setWebViewClient(new WebViewClient() {
             @Override
