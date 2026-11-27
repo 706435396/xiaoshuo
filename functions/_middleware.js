@@ -15,8 +15,11 @@
  * ============================================================ */
 const THEME_TAG = '<link rel="stylesheet" href="/theme.css" data-sy-theme="1">';
 const AD_VER = '5'; // 升级此值即可全站强制刷新 adboot/adfoot 脚本缓存（v5: 彻底关闭 Popunder 弹窗）
-const ADSLOTS_VER = '5'; // adslots.js 渲染器版本（atOptions 绝对定位防撑开侧栏）；升级即全站破缓存
+const ADSLOTS_VER = '6'; // adslots.js/ads.js 渲染器版本（v6: 年龄门期间延后注入广告）
 const POPUNDER_VER = '2'; // 弹窗/插屏脚本版本；升级即全站破缓存（v2: 改为后台可配置插屏）
+const POPUP_VER = '1'; // 站内浮窗拦截器版本（劫持 window.open → 站内浮窗，可关闭）
+const POPUP_TAG = '<script src="/adpopup.js?v=' + POPUP_VER + '" data-sy-float="1"><\/script>';
+const AGE_VER = '2'; // 年龄门版本（v2: 确认按钮点击隔离 + 派发 sy:age-ok）
 const POPUNDER_TAG = '<script src="/popunder.js?v=' + POPUNDER_VER + '" data-sy-pop="1"><\/script>';
 
 export async function onRequest(context) {
@@ -39,11 +42,16 @@ export async function onRequest(context) {
       .replace(/(["'])(\/adfoot\.js)(?!\?)/g, '$1$2?v=' + AD_VER)
       // adslots.js 首页写死 ?v=2、ads.js 看书页无版本号，统一加/升级版本号破缓存
       .replace(/(["'])(\/adslots\.js)(\?v=\d+)?/g, '$1$2?v=' + ADSLOTS_VER)
-      .replace(/(["'])(\/ads\.js)(?!\?)/g, '$1$2?v=' + ADSLOTS_VER);
+      .replace(/(["'])(\/ads\.js)(?!\?)/g, '$1$2?v=' + ADSLOTS_VER)
+      .replace(/(["'])(\/agegate\.js)(\?v=\d+)?/g, '$1$2?v=' + AGE_VER);
 
-    // --- 2) 主题注入：无 </head> 或页面已自带标记则跳过注入 ---
+    // --- 2) 主题注入 + 浮窗拦截器注入 ---
+    // 浮窗拦截器必须尽早执行（早于联盟脚本），劫持 window.open 改为站内浮窗。
     if (!html.includes('data-sy-theme') && /<\/head>/i.test(html)) {
       html = html.replace(/<\/head>/i, THEME_TAG + '\n</head>');
+    }
+    if (!html.includes('data-sy-float') && /<head[^>]*>/i.test(html)) {
+      html = html.replace(/(<head[^>]*>)/i, '$1\n' + POPUP_TAG);
     }
 
     // --- 3) 弹窗脚本注入：无 </body> 或页面已带标记则跳过（幂等） ---
