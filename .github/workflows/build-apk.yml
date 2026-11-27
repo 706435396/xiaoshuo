@@ -1,0 +1,53 @@
+name: Build Android APK (深夜文库)
+
+# 在云端构建 APK，本机无需装 Android Studio / JDK / SDK。
+# 触发后可到 Actions 页面下载 artifact，或直接点下面的直链。
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Build release APK
+        working-directory: android-app
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APK with version
+        run: |
+          mkdir -p apk-out
+          cp android-app/app/build/outputs/apk/release/app-release.apk \
+             "apk-out/shenye-reader-v1.0.apk"
+          ls -lh apk-out/
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shenye-reader-apk
+          path: apk-out/*.apk
+          retention-days: 90
