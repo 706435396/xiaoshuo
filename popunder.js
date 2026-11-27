@@ -58,7 +58,15 @@
     if (!slot || !slot.value) return;
     if (alreadyFired()) return;
     markFired(); // 先写门控再注入，避免脚本重复加载/多次弹
-    injectHtml(slot.value);
+    var v = slot.value.trim();
+    // 纯 URL：用站内浮窗打开（不跳走、可关闭）——这是最推荐的配置方式
+    if (/^https?:\/\//i.test(v) && !/[<>]/.test(v)) {
+      if (window.SYFloat && window.SYFloat.open) window.SYFloat.open(v);
+      else window.open(v, '_blank', 'noopener');
+      return;
+    }
+    // 联盟 HTML/script：注入宿主（其 window.open 已被 adpopup.js 劫持为浮窗）
+    injectHtml(v);
   }
 
   function loadAndFire() {
@@ -71,7 +79,14 @@
         for (var i = 0; i < list.length; i++) {
           if (list[i] && list[i].enabled && list[i].value) { slot = list[i]; break; }
         }
-        fire(slot);
+        if (!slot) return;
+        // 年龄门显示期间延后触发，等 sy:age-ok 再弹（避免遮罩期被打断）
+        var gate = document.getElementById('agegate');
+        if (gate && !previewMode) {
+          document.addEventListener('sy:age-ok', function () { fire(slot); }, { once: true });
+        } else {
+          fire(slot);
+        }
       })
       .catch(function () { /* 后台不可用：静默，不影响阅读 */ });
   }
