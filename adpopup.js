@@ -47,7 +47,7 @@
     var mobile = Math.min(window.innerWidth, window.innerHeight) < 620 ||
                  /android|iphone|ipad|mobile/i.test(navigator.userAgent || '');
     var wrap = document.createElement('div');
-    wrap.setAttribute('data-sy-float', '1');
+    wrap.setAttribute('data-sy-floatbox', '1');
     wrap.style.cssText = 'position:fixed;z-index:' + zIndex + ';background:#12121a;' +
       'border:1px solid rgba(167,139,250,.5);border-radius:12px;overflow:hidden;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.6);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
