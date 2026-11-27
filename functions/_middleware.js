@@ -7,6 +7,7 @@
  *   2. 把页面里 /adboot.js、/adfoot.js 的引用加上版本号 ?v=5，强制破 CF 边缘缓存
  *      （源脚本已更新为"停用写死联盟广告"，但旧 URL 被 CDN 缓存 HIT 拿到旧版）。
  *   3. 全站注入 /popunder.js（首次访问插屏弹窗广告，代码来自后台 interstitial 区），幂等、只注一次。
+ *   4. 全站注入 /mobile-adapt.css（移动端自适应增强：视口防溢出 + 排版/广告手机优化）。
  *
  * 设计要点：
  *   1. 只处理 content-type 含 text/html 的响应，API / JSON / 图片直接放行。
@@ -17,10 +18,12 @@ const THEME_TAG = '<link rel="stylesheet" href="/theme.css" data-sy-theme="1">';
 const AD_VER = '5'; // 升级此值即可全站强制刷新 adboot/adfoot 脚本缓存（v5: 彻底关闭 Popunder 弹窗）
 const ADSLOTS_VER = '6'; // adslots.js/ads.js 渲染器版本（v6: 年龄门期间延后注入广告）
 const POPUNDER_VER = '2'; // 弹窗/插屏脚本版本；升级即全站破缓存（v2: 改为后台可配置插屏）
-const POPUP_VER = '1'; // 站内浮窗拦截器版本（劫持 window.open → 站内浮窗，可关闭）
+const POPUP_VER = '2'; // 站内浮窗拦截器版本（v2: 手机底部抽屉式全宽 + 横屏UA判断修正）
 const POPUP_TAG = '<script src="/adpopup.js?v=' + POPUP_VER + '" data-sy-float="1"><\/script>';
 const AGE_VER = '2'; // 年龄门版本（v2: 确认按钮点击隔离 + 派发 sy:age-ok）
 const POPUNDER_TAG = '<script src="/popunder.js?v=' + POPUNDER_VER + '" data-sy-pop="1"><\/script>';
+const MOBILE_VER = '1'; // 移动端自适应增强版本；升级即全站破缓存
+const MOBILE_TAG = '<link rel="stylesheet" href="/mobile-adapt.css?v=' + MOBILE_VER + '" data-sy-mobile="1">';
 
 export async function onRequest(context) {
   const { next } = context;
@@ -49,6 +52,10 @@ export async function onRequest(context) {
     // 浮窗拦截器必须尽早执行（早于联盟脚本），劫持 window.open 改为站内浮窗。
     if (!html.includes('data-sy-theme') && /<\/head>/i.test(html)) {
       html = html.replace(/<\/head>/i, THEME_TAG + '\n</head>');
+    }
+    // 移动端自适应增强：放在 theme.css 之后，确保覆盖顺序正确
+    if (!html.includes('data-sy-mobile') && /<\/head>/i.test(html)) {
+      html = html.replace(/<\/head>/i, MOBILE_TAG + '\n</head>');
     }
     if (!html.includes('data-sy-float') && /<head[^>]*>/i.test(html)) {
       html = html.replace(/(<head[^>]*>)/i, '$1\n' + POPUP_TAG);
