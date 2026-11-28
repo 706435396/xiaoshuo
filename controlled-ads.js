@@ -210,7 +210,8 @@
     if (!preloadPopunder(slot)) return false;
     if (popTriggeredThisPage || popTriggering) return false;
     if (!force && !popAllowedByFreq()) return false;
-    if (!force && now() - pageStart < MIN_DWELL) return false;
+    // adpreview 后台预览跳过停留门槛，正常访客仍需停留 10 秒。
+    if (!force && !preview && now() - pageStart < MIN_DWELL) return false;
 
     popTriggering = true;
     var before = window.__SY_NATIVE_TAB_OPENED__ || 0;
