@@ -8,3 +8,6 @@
 
 /*.json
 	Cache-Control: no-cache
+
+/admin-ads.html
+	Cache-Control: no-cache
