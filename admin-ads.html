@@ -100,7 +100,7 @@
   <div class="adm-head">
     <div>
       <div class="adm-title">深夜文库 · 广告管理</div>
-      <div class="adm-sub">首页三区 + 看书两区 · 可增删广告位 · 三端预览 · 数据存 Cloudflare KV</div>
+      <div class="adm-sub">首页三区 + 看书两区 + 受控广告 · 可增删广告位 · 三端预览 · 数据存 Cloudflare KV</div>
     </div>
     <a href="/" target="_blank">查看首页 ↗</a>
   </div>
@@ -133,6 +133,7 @@
         <button class="tab active" data-group="home">首页广告</button>
         <button class="tab" data-group="read">看书页广告</button>
         <button class="tab" data-group="popup">插屏弹窗</button>
+        <button class="tab" data-group="control">受控广告</button>
       </div>
     </div>
 
@@ -141,14 +142,15 @@
     <div class="help">
       <b>使用说明</b>
       <ul>
-        <li><b>三组标签页</b>：<code>首页广告</code>、<code>看书页广告</code>、<code>插屏弹窗</code>，互不干扰；「保存全部」会一次保存三组所有区。</li>
+        <li><b>四组标签页</b>：<code>首页广告</code>、<code>看书页广告</code>、<code>插屏弹窗</code>、<code>受控广告</code>，互不干扰；「保存全部」会一次保存四组所有区。</li>
         <li><b>首页三区</b>：<code>顶部 hero</code>（主区 Tabs 上方，桌面两列/手机单列）、<code>左侧 cat</code>（分类栏下，约 208px）、<code>右侧 shelf</code>（书架栏下，约 224px）。</li>
         <li><b>看书两区</b>：<code>正文上方 reader-top</code>、<code>正文下方 reader-bottom</code>。同一份配置自动作用于 TXT 阅读器（reader-top/bottom）与书详情/章节页（content-top/bottom），无需改书页。建议 320×50 横幅或 300×250 中矩形。</li>
         <li><b>图片模式</b>：内容填图片直链，链接填点击跳转地址；选尺寸预设后按该尺寸居中显示。</li>
         <li><b>HTML 模式</b>：粘贴联盟代码，支持异步脚本（<code>&lt;ins&gt;+jads.js</code>、<code>container+脚本</code>）与 iframe。<b>不支持</b> <code>document.write</code> 型（如旧版 atOptions），会清空整页；请用 iframe 版。</li>
         <li><b>尺寸预设</b>：auto 为自适应（图片按容器缩放）；固定尺寸按像素居中，窄屏自动缩到 100% 宽防溢出；<code>728×90 / 468×60</code> 为通栏，占满整行。</li>
         <li><b>插屏弹窗</b>：在 Adsterra 后台建 <code>Interstitial</code>（插屏）广告位，把生成的 <code>&lt;script …&gt;</code> 整段粘到内容框、类型选「HTML代码」、勾选启用。全站每个浏览器<b>首次访问弹一次</b>（localStorage 门控），样式（图标/星级/商品图/关闭按钮）由 Adsterra 联盟实时下发，本站只负责按首次触发加载。取该区<b>第一个启用且有内容</b>的广告位。</li>
-        <li><b>三端预览</b>：点「预览三端」会先自动保存，再按 PC 1440 / 笔记本 1280 / 手机 390 三种视口加载当前标签页对应的真实页面（首页标签→首页、看书标签→阅读器、插屏标签→首页），切换标签查看。插屏因门控只弹一次，若已弹过请清该站缓存后再预览。</li>
+        <li><b>受控广告</b>：<code>PC 受控 Popunder</code> 仅桌面在「退出意图 / 点击上一章下一章」时触发一次，24 小时最多一次，内容填 Adsterra 官方 Popunder <code>&lt;script&gt;</code>（或纯 <code>https://</code> 脚本地址），类型选「HTML代码」；<code>手机 Direct Link</code> 只在手机显示一个明确按钮，内容填 Direct Link 地址，备注填按钮文字（如「赞助本站」）。</li>
+        <li><b>三端预览</b>：点「预览三端」会先自动保存，再按 PC 1440 / 笔记本 1280 / 手机 390 三种视口加载当前标签页对应的真实页面（首页标签→首页、看书标签→阅读器、插屏标签→首页），切换标签查看。插屏与受控广告因频率门控可能不会每次预览都触发。</li>
         <li>只有勾选「启用」且有内容的广告位会显示；未启用的不占位。改动需保存后才上线上生效。</li>
       </ul>
     </div>
@@ -192,9 +194,11 @@
     { key:'shelf', group:'home', name:'右侧 shelf 网格', pos:'右侧书架栏下方 · 栏宽约 224px · 建议窄图 / 300×250' },
     { key:'reader-top',    group:'read', name:'正文上方 · reader-top',    pos:'阅读器正文上方 / 书详情·章节页正文上方 · 建议 320×50 横幅 / 300×250' },
     { key:'reader-bottom', group:'read', name:'正文下方 · reader-bottom', pos:'阅读器正文下方 / 书详情·章节页正文下方 · 建议 320×50 横幅 / 300×250' },
-    { key:'interstitial', group:'popup', name:'插屏弹窗 · interstitial', pos:'全站生效 · 每个浏览器首次访问弹一次 · 粘贴 Adsterra Interstitial 代码（<script>…）· 取第一个启用项' }
+    { key:'interstitial', group:'popup', name:'插屏弹窗 · interstitial', pos:'全站生效 · 每个浏览器首次访问弹一次 · 默认停用 · 取第一个启用项' },
+    { key:'popunder', group:'control', name:'PC 受控 Popunder', pos:'仅桌面 · 退出意图/上一章下一章点击触发 · 24h 一次 · 新标签不替换当前窗口' },
+    { key:'directlink', group:'control', name:'手机 Direct Link 按钮', pos:'仅手机显示 · 明确点击后新标签打开 · 内容填 Direct Link 地址，备注填按钮文字' }
   ];
-  var GROUPS = ['home','read','popup'];
+  var GROUPS = ['home','read','popup','control'];
   var curGroup = 'home';
   var SIZES = [
     ['auto','自适应'],['300x250','300×250 中矩形'],['320x50','320×50 横幅'],
@@ -400,7 +404,7 @@
   $('saveBtn').addEventListener('click',function(){ save(false); });
 
   $('clearBtn').addEventListener('click',async function(){
-    if(!confirm('确定清空全部三组（首页三区 + 看书两区 + 插屏弹窗）广告位？（立即生效，不可撤销）')) return;
+    if(!confirm('确定清空全部四组（首页三区 + 看书两区 + 插屏弹窗 + 受控广告）广告位？（立即生效，不可撤销）')) return;
     try{
       var emptyZones={};
       ZONES.forEach(function(z){ emptyZones[z.key]=[]; });
