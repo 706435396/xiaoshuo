@@ -117,18 +117,30 @@
     }
   }
 
-  // --- 1) 劫持 window.open：外站一律改浮窗 ---
+  // --- 1) 劫持 window.open：默认外站改浮窗；受控 Popunder 临时放行新标签 ---
   var realOpen = window.open;
+  function fakeWindow() {
+    return {
+      closed: false, location: { href: '' },
+      focus: function () {}, blur: function () {}, close: function () { this.closed = true; },
+      moveTo: function () {}, resizeTo: function () {}, scrollTo: function () {}
+    };
+  }
   window.open = function (u, name, specs) {
+    // controlled-ads.js 只在 PC 受控 Popunder 注入期间打开此开关：
+    // 让联盟代码真实开新标签，但返回假句柄，避免它把新窗口 focus 到前台。
+    if (window.__SY_ALLOW_NATIVE_TAB__) {
+      var args = Array.prototype.slice.call(arguments);
+      // 强制新标签：即使联盟脚本传了 _self/_top，也绝不替换当前小说窗口。
+      if (!args[1] || args[1] === '_self' || args[1] === '_parent' || args[1] === '_top') args[1] = '_blank';
+      if (typeof args[2] === 'string') args[2] += ',noopener,noreferrer';
+      else args[2] = 'noopener,noreferrer';
+      try { realOpen.apply(window, args); } catch (e) {}
+      return fakeWindow();
+    }
     if (isExternal(u)) {
       open(String(u));
-      // 返回一个「假窗口」，避免联盟脚本调用 .focus/.closed 报错
-      var fake = {
-        closed: false, location: { href: '' },
-        focus: function () {}, blur: function () {}, close: function () { this.closed = true; },
-        moveTo: function () {}, resizeTo: function () {}, scrollTo: function () {}
-      };
-      return fake;
+      return fakeWindow();
     }
     return realOpen.apply(window, arguments);
   };
@@ -140,6 +152,8 @@
     if (!t || !t.closest) return;
     var a = t.closest('a');
     if (!a) return;
+    // 受控 Direct Link：用户明确点击「新标签打开」，必须绕过浮窗拦截。
+    if (a.hasAttribute('data-sy-newtab') || a.hasAttribute('data-sy-controlled-direct')) return;
     var href = a.getAttribute('href') || '';
     if (!isExternal(href)) return; // 站内/非http 放行
     var blank = a.target === '_blank' || a.getAttribute('target') === '_blank';
