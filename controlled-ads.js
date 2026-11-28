@@ -243,8 +243,8 @@
     var slot = firstSlot('popunder');
     if (!slot) return;
 
-    // 只预加载脚本，不在加载时弹窗；等真实用户动作再放行。
-    preloadPopunder(slot);
+    // 先注册受控放行监听，再预加载联盟脚本。
+    // 事件顺序：本站放行 → 联盟脚本调用 window.open，避免联盟回调抢先被浮窗拦截。
 
     // 用户点击上一章/下一章：捕获阶段放行，联盟脚本在同一手势内触发。
     document.addEventListener('click', function (e) {
@@ -259,6 +259,9 @@
       if (y > 2) return;
       openPopunderWindow(false);
     }, { passive: true });
+
+    // 只预加载脚本，不在加载时弹窗；等真实用户动作再放行。
+    preloadPopunder(slot);
 
     // 控制台/后台调试入口
     window.SYControlledAds = {
