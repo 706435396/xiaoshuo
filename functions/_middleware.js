@@ -17,9 +17,11 @@
 const THEME_TAG = '<link rel="stylesheet" href="/theme.css" data-sy-theme="1">';
 const AD_VER = '5'; // 升级此值即可全站强制刷新 adboot/adfoot 脚本缓存（v5: 彻底关闭 Popunder 弹窗）
 const ADSLOTS_VER = '6'; // adslots.js/ads.js 渲染器版本（v6: 年龄门期间延后注入广告）
-const POPUNDER_VER = '2'; // 弹窗/插屏脚本版本；升级即全站破缓存（v2: 改为后台可配置插屏）
-const POPUP_VER = '2'; // 站内浮窗拦截器版本（v2: 手机底部抽屉式全宽 + 横屏UA判断修正）
+const POPUNDER_VER = '2'; // 旧插屏脚本版本；升级即全站破缓存（保持 v2）
+const POPUP_VER = '3'; // 站内浮窗拦截器版本（v3: 受控 Popunder 临时放行真实新标签 + Direct Link 白名单）
 const POPUP_TAG = '<script src="/adpopup.js?v=' + POPUP_VER + '" data-sy-float="1"><\/script>';
+const CONTROLLED_VER = '1'; // 受控广告（PC Popunder + 手机 Direct Link）版本
+const CONTROLLED_TAG = '<script src="/controlled-ads.js?v=' + CONTROLLED_VER + '" data-sy-controlled="1"><\/script>';
 const AGE_VER = '2'; // 年龄门版本（v2: 确认按钮点击隔离 + 派发 sy:age-ok）
 const POPUNDER_TAG = '<script src="/popunder.js?v=' + POPUNDER_VER + '" data-sy-pop="1"><\/script>';
 const MOBILE_VER = '2'; // 移动端自适应增强版本；升级即全站破缓存（v2: 手机首页优化-顶栏防裁切/分类提示/书卡间距）
@@ -76,6 +78,10 @@ export async function onRequest(context) {
     // 手机首页增强：仅首页内部生效（脚本自身判断 #catBar/#mobileShelf 存在与否），全站注入幂等
     if (!html.includes('data-sy-home') && /<\/body>/i.test(html)) {
       html = html.replace(/<\/body>/i, HOME_TAG + '\n</body>');
+    }
+    // 受控广告：PC Popunder + 手机 Direct Link（脚本内部判断设备与后台开关），全站注入幂等
+    if (!html.includes('data-sy-controlled') && /<\/body>/i.test(html)) {
+      html = html.replace(/<\/body>/i, CONTROLLED_TAG + '\n</body>');
     }
 
     const headers = new Headers(original.headers);
