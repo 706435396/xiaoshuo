@@ -2,14 +2,16 @@
 // GET  /api/adslots          公开读取（前台渲染 / 后台加载；带正确 X-Ad-Pass 时附 authed=true）
 // POST /api/adslots          需 X-Ad-Pass 管理密码，写入 KV
 //
-// 数据结构：六区，每区是广告位数组，可自由增删
+// 数据结构：八区，每区是广告位数组，可自由增删
 //   首页三区：hero / cat / shelf
 //   看书两区：reader-top（正文上方）/ reader-bottom（正文下方）
-//   插屏一区：interstitial（Adsterra Interstitial 弹窗代码，首次访问弹一次，由 popunder.js 读取）
-//   { v:2, zones:{ hero:[slot], cat:[slot], shelf:[slot], 'reader-top':[slot], 'reader-bottom':[slot], interstitial:[slot] }, updatedAt }
+//   插屏一区：interstitial（旧插屏，默认停用；由 popunder.js 读取）
+//   受控两区：popunder（仅 PC 用户动作/退出意图触发的新标签广告）/ directlink（手机显式新标签按钮）
+//   { v:2, zones:{ hero:[slot], cat:[slot], shelf:[slot], 'reader-top':[slot], 'reader-bottom':[slot], interstitial:[slot], popunder:[slot], directlink:[slot] }, updatedAt }
 //   slot = { id, enabled, type:'image'|'html', value, link, note, size }
 // 注：看书两区由 ads.js 读取，同时映射旧静态命名 reader-top/bottom 与 content-top/bottom。
 // 注：interstitial 由 popunder.js 读取，仅取第一个启用且有内容的 slot。
+// 注：popunder / directlink 由 controlled-ads.js 读取，均只取第一个启用且有内容的 slot。
 //
 // 管理密码：CF 环境变量 AD_PASS；未设置时使用内置默认值
 // 数据存 KV USER_DATA，key = 'adslots:v1'（沿用 key，内部版本升 v2，自动迁移旧数据）
@@ -17,7 +19,7 @@ import { json } from './_shared.js';
 
 var KEY = 'adslots:v1';
 var DEFAULT_PASS = 'shenye2026';
-var ZONES = ['hero', 'cat', 'shelf', 'reader-top', 'reader-bottom', 'interstitial'];
+var ZONES = ['hero', 'cat', 'shelf', 'reader-top', 'reader-bottom', 'interstitial', 'popunder', 'directlink'];
 var MAX_PER_ZONE = 24;   // 每区最多 24 个广告位，防滥用
 var MAX_SLOT_LEN = 20000;
 
@@ -45,7 +47,7 @@ function emptySlot() {
   return { id: makeId(), enabled: false, type: 'image', value: '', link: '', note: '', size: 'auto' };
 }
 
-// 初始结构：五区各 2 个空位 + 插屏 1 个空位（用户可增删）
+// 初始结构：五区各 2 个空位 + 插屏 1 个空位 + 受控两区各 1 个空位（用户可增删）
 function emptyData() {
   return {
     v: 2,
@@ -55,7 +57,9 @@ function emptyData() {
       shelf: [normalizeSlot({ id: 'shelf-1' }), normalizeSlot({ id: 'shelf-2' })],
       'reader-top': [normalizeSlot({ id: 'rt-1' }), normalizeSlot({ id: 'rt-2' })],
       'reader-bottom': [normalizeSlot({ id: 'rb-1' }), normalizeSlot({ id: 'rb-2' })],
-      interstitial: [normalizeSlot({ id: 'it-1' })]
+      interstitial: [normalizeSlot({ id: 'it-1' })],
+      popunder: [normalizeSlot({ id: 'popunder-1', type: 'html', note: 'PC 受控 Popunder：仅点击/退出意图触发' })],
+      directlink: [normalizeSlot({ id: 'directlink-1', type: 'image', note: '赞助本站' })]
     },
     updatedAt: 0
   };
