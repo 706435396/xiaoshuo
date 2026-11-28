@@ -20,7 +20,7 @@ const ADSLOTS_VER = '6'; // adslots.js/ads.js 渲染器版本（v6: 年龄门期
 const POPUNDER_VER = '2'; // 旧插屏脚本版本；升级即全站破缓存（保持 v2）
 const POPUP_VER = '5'; // 站内浮窗拦截器版本（v5: 受控 Popunder 手势窗口 + 预加载屏蔽 + Direct Link 白名单）
 const POPUP_TAG = '<script src="/adpopup.js?v=' + POPUP_VER + '" data-sy-float="1"><\/script>';
-const CONTROLLED_VER = '3'; // 受控广告（PC Popunder + 手机 Direct Link）版本（v3: 预加载脚本+手势触发）
+const CONTROLLED_VER = '4'; // 受控广告（PC Popunder + 手机 Direct Link）版本（v4: 预览模式跳过停留门槛）
 const CONTROLLED_TAG = '<script src="/controlled-ads.js?v=' + CONTROLLED_VER + '" data-sy-controlled="1"><\/script>';
 const AGE_VER = '2'; // 年龄门版本（v2: 确认按钮点击隔离 + 派发 sy:age-ok）
 const POPUNDER_TAG = '<script src="/popunder.js?v=' + POPUNDER_VER + '" data-sy-pop="1"><\/script>';
