@@ -127,6 +127,8 @@
     };
   }
   window.open = function (u, name, specs) {
+    // 预加载受控脚本期间屏蔽自动弹窗：绝不页面加载即跳/即浮窗
+    if (window.__SY_SUPPRESS_EXTERNAL_OPEN__) return fakeWindow();
     // controlled-ads.js 只在 PC 受控 Popunder 注入期间打开此开关：
     // 让联盟代码真实开新标签，但返回假句柄，避免它把新窗口 focus 到前台。
     if (window.__SY_ALLOW_NATIVE_TAB__) {
@@ -135,7 +137,10 @@
       if (!args[1] || args[1] === '_self' || args[1] === '_parent' || args[1] === '_top') args[1] = '_blank';
       if (typeof args[2] === 'string') args[2] += ',noopener,noreferrer';
       else args[2] = 'noopener,noreferrer';
-      try { realOpen.apply(window, args); } catch (e) {}
+      try {
+        realOpen.apply(window, args);
+        window.__SY_NATIVE_TAB_OPENED__ = (window.__SY_NATIVE_TAB_OPENED__ || 0) + 1;
+      } catch (e) {}
       return fakeWindow();
     }
     if (isExternal(u)) {
@@ -154,6 +159,7 @@
     if (!a) return;
     // 受控 Direct Link：用户明确点击「新标签打开」，必须绕过浮窗拦截。
     if (a.hasAttribute('data-sy-newtab') || a.hasAttribute('data-sy-controlled-direct')) return;
+    if (window.__SY_SUPPRESS_EXTERNAL_OPEN__) return;
     var href = a.getAttribute('href') || '';
     if (!isExternal(href)) return; // 站内/非http 放行
     var blank = a.target === '_blank' || a.getAttribute('target') === '_blank';
