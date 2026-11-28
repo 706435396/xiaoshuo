@@ -32,7 +32,8 @@
   var config = null;
   var inited = false;
   var popInjected = false;
-  var popFiring = false;
+  var popTriggering = false;
+  var popTriggeredThisPage = false;
   var directShown = false;
   var preview = /[?&]adpreview=/.test(location.search || '');
 
@@ -170,32 +171,21 @@
     });
   }
 
-  function firePopunder(force) {
-    if (popInjected || popFiring || !config) return false;
-    if (!isDesktopLike()) return false; // 手机/平板绝不自动弹
-    var slot = firstSlot('popunder');
-    if (!slot) return false;
-    var code = String(slot.value || '').trim();
+  // 预加载官方脚本：只注册监听器，绝不在此刻弹窗。
+  function preloadPopunder(slot) {
+    if (popInjected) return true;
+    var code = String(slot.value || slot.link || '').trim();
     if (!code) return false;
-    if (!force && !popAllowedByFreq()) return false;
-    if (!force && now() - pageStart < MIN_DWELL) return false;
-
-    popFiring = true;
-    markPopFired();
     popInjected = true;
-
-    // 关键：临时放行 adpopup.js 劫持的 window.open，让联盟脚本开真实新标签。
-    // 当前小说窗口不会被替换；用户只是多了一个后台/新标签。
-    window.__SY_ALLOW_NATIVE_TAB__ = true;
-    setTimeout(function () {
-      // 8 秒后恢复站内浮窗策略，避免影响其它广告链接。
-      window.__SY_ALLOW_NATIVE_TAB__ = false;
-    }, 8000);
 
     var host = document.createElement('div');
     host.setAttribute('data-sy-pc-popunder', '1');
     host.style.cssText = 'position:fixed;left:-99999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
     (document.body || document.documentElement).appendChild(host);
+
+    // 关键：预加载期间屏蔽一切外站跳转/浮窗，避免联盟脚本在页面加载后自动弹。
+    window.__SY_SUPPRESS_EXTERNAL_OPEN__ = true;
+    window.__SY_ALLOW_NATIVE_TAB__ = false;
 
     try {
       if (/^https?:\/\//i.test(code) && !/[<>]/.test(code)) {
@@ -207,9 +197,39 @@
         execScripts(code, host);
       }
     } catch (e) {
-      // 注入失败不能影响阅读；频率已经记录，避免反复报错。
+      // 注入失败不能影响阅读
     }
-    popFiring = false;
+    return true;
+  }
+
+  // 用户动作到达时短暂放行：联盟脚本自己调用 window.open，adpopup.js 会强制开新标签。
+  function openPopunderWindow(force) {
+    if (!config || !isDesktopLike()) return false; // 手机/平板绝不自动弹
+    var slot = firstSlot('popunder');
+    if (!slot) return false;
+    if (!preloadPopunder(slot)) return false;
+    if (popTriggeredThisPage || popTriggering) return false;
+    if (!force && !popAllowedByFreq()) return false;
+    if (!force && now() - pageStart < MIN_DWELL) return false;
+
+    popTriggering = true;
+    var before = window.__SY_NATIVE_TAB_OPENED__ || 0;
+
+    // 临时打开真实新标签通道；当前小说窗口绝不会被替换。
+    window.__SY_ALLOW_NATIVE_TAB__ = true;
+    window.__SY_SUPPRESS_EXTERNAL_OPEN__ = false;
+
+    setTimeout(function () {
+      window.__SY_ALLOW_NATIVE_TAB__ = false;
+      window.__SY_SUPPRESS_EXTERNAL_OPEN__ = true;
+      var after = window.__SY_NATIVE_TAB_OPENED__ || 0;
+      if (after > before) {
+        popTriggeredThisPage = true;
+        markPopFired();
+      }
+      popTriggering = false;
+    }, 1200);
+
     return true;
   }
 
@@ -222,9 +242,12 @@
     var slot = firstSlot('popunder');
     if (!slot) return;
 
-    // 用户点击上一章/下一章：真实用户动作后再注入（捕获阶段，不阻止原逻辑）。
+    // 只预加载脚本，不在加载时弹窗；等真实用户动作再放行。
+    preloadPopunder(slot);
+
+    // 用户点击上一章/下一章：捕获阶段放行，联盟脚本在同一手势内触发。
     document.addEventListener('click', function (e) {
-      if (isChapterControl(e.target)) firePopunder(false);
+      if (isChapterControl(e.target)) openPopunderWindow(false);
     }, true);
 
     // 退出意图：鼠标从顶部离开视口，且已停留足够时间。
@@ -233,15 +256,21 @@
       if (e.relatedTarget) return;
       var y = (typeof e.clientY === 'number') ? e.clientY : 0;
       if (y > 2) return;
-      firePopunder(false);
+      openPopunderWindow(false);
     }, { passive: true });
 
     // 控制台/后台调试入口
     window.SYControlledAds = {
-      fire: function () { return firePopunder(true); },
+      fire: function () { return openPopunderWindow(true); },
       refresh: function () { config = null; inited = false; return loadConfig(); },
       state: function () {
-        return { device: isDesktopLike() ? 'pc' : 'mobile', ageOk: ageOk, popInjected: popInjected, directShown: directShown };
+        return {
+          device: isDesktopLike() ? 'pc' : 'mobile',
+          ageOk: ageOk,
+          popInjected: popInjected,
+          popTriggered: popTriggeredThisPage,
+          directShown: directShown
+        };
       }
     };
   }
